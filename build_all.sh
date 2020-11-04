@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Lakka build script
+# Nircada OS build script
 #
 # This script builds images for all supported platforms/target devices listed in
 # the 'targets' variable.
@@ -100,7 +100,7 @@ for target in ${targets}
 do
 	current+=1
 
-	distro="Lakka"
+	distro="NircadaOS"
 	IFS='|' read -r -a build  <<< "${target}"
 	project=${build[0]}
 	device=${build[1]}
@@ -267,7 +267,7 @@ do
 		mkdir -p ${target_name}
 		# add md5 checksums to system and kernel files
 		[ "${DASHBOARD_MODE}" = "yes" ] && echo -n "Creating md5 checksums for kernel and system..."
-		for file in Lakka-${target_name}-*.{kernel,system}
+		for file in NircadaOS-${target_name}-*.{kernel,system}
 		do
 			[ -f "${file}" ] && md5sum ${file} > ${file}.md5
 		done
@@ -275,14 +275,14 @@ do
 
 		# move release files to the folder
 		[ "${DASHBOARD_MODE}" = "yes" ] && echo -n "Moving release files (.img.gz, .kernel, .system, -noobs.tar) to subfolder..."
-		for file in Lakka-${target_name}-*{.img.gz,-noobs.tar,.kernel,.system}*
+		for file in NircadaOS-${target_name}-*{.img.gz,-noobs.tar,.kernel,.system}*
 		do
 			[ -f "${file}" ] && mv ${v} ${file} ${target_name}/
 		done
 		[ "${DASHBOARD_MODE}" = "yes" ] && echo "done!"
 		# remove files we do not use
 		[ "${DASHBOARD_MODE}" = "yes" ] && echo -n "Removing unused files (.tar, .ova)..."
-		rm -f ${v} Lakka-${target_name}-*.{tar,ova}*
+		rm -f ${v} NircadaOS-${target_name}-*.{tar,ova}*
 		[ "${DASHBOARD_MODE}" = "yes" ] && echo "done!"
 		cd ..
 	else

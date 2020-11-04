@@ -1,6 +1,6 @@
 # Odroid Go Advance
 
-Lakka device for Odroid Go Advance
+Nircada OS device for Odroid Go Advance
 
 **Build**
 

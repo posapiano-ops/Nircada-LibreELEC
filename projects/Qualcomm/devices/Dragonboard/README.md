@@ -9,8 +9,8 @@ All this makes it difficult to create a disk image that can easily be flashed an
 
 #### Flash the .img file to and SD card (etcher,dd, rufus, LE disk image tool, etc)
 ```
-gunzip LAkka-Dragonboard.arm.img.gz
-dd if=Lakka-Dragonboard.arm.img of=/dev/sdx bs=4M
+gunzip Nircada-Dragonboard.arm.img.gz
+dd if=Nircada-Dragonboard.arm.img of=/dev/sdx bs=4M
 ```
 
  #### Mount the first partition

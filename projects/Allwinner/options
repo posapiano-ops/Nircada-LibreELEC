@@ -68,7 +68,7 @@
   # e.g. FIRMWARE="dvb-firmware misc-firmware wlan-firmware"
     FIRMWARE="misc-firmware wlan-firmware dvb-firmware brcmfmac_sdio-firmware"
 
-    if [ "$DISTRO" = "Lakka" ]; then
+    if [ "$DISTRO" = "NircadaOS" ]; then
       FIRMWARE="misc-firmware wlan-firmware brcmfmac_sdio-firmware"
     fi
 

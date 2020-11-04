@@ -60,7 +60,7 @@
   # driver addons to install:
     DRIVER_ADDONS="crazycat dvb-latest"
 
-    if [ "$DISTRO" = "Lakka" ]; then
+    if [ "$DISTRO" = "NircadaOS" ]; then
       DRIVER_ADDONS=""
     fi
 

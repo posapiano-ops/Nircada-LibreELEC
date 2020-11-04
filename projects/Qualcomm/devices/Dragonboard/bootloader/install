@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0
-# Copyright (C) 2019-present Team Lakka (https://lakka.tv)
+# Copyright (C) 2020-present Team Nircada (https://nircada.weebly.com)
 
 dtbTool -o dt.img arch/arm/dts/
 

@@ -201,7 +201,7 @@ post_makeinstall_target() {
   sed -e "s,^.*HandlePowerKey=.*$,HandlePowerKey=ignore,g" -i $INSTALL/etc/systemd/logind.conf
 
   # fix ordering cycle for overlay mounts
-  if [ "$DISTRO" = "Lakka" ]; then
+  if [ "$DISTRO" = "NircadaOS" ]; then
     sed -e "s/local-fs\.target/tmp.mount var.mount/" -i $INSTALL/usr/lib/systemd/system/systemd-tmpfiles-setup.service
   fi
 

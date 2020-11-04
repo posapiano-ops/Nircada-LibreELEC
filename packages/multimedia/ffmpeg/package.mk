@@ -16,7 +16,7 @@ PKG_BUILD_FLAGS="-gold"
 # Dependencies
 get_graphicdrivers
 
-if [ "$DISTRO" = "Lakka" ]; then
+if [ "$DISTRO" = "NircadaOS" ]; then
   VAAPI_SUPPORT=no
 fi
 

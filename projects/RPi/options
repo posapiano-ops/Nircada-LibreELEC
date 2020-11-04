@@ -119,7 +119,7 @@
   # e.g. FIRMWARE="dvb-firmware misc-firmware wlan-firmware"
     FIRMWARE="misc-firmware wlan-firmware dvb-firmware brcmfmac_sdio-firmware-rpi"
 
-    if [ "$DISTRO" = "Lakka" ]; then
+    if [ "$DISTRO" = "NircadaOS" ]; then
       FIRMWARE="misc-firmware wlan-firmware brcmfmac_sdio-firmware-rpi"
     fi
 
@@ -147,7 +147,7 @@
   # Space separated list is supported,
     DRIVER_ADDONS="crazycat dvb-latest"
 
-    if [ "$DISTRO" = "Lakka" ]; then
+    if [ "$DISTRO" = "NircadaOS" ]; then
       DRIVER_ADDONS=""
     fi
 

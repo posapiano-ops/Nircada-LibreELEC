@@ -13,7 +13,7 @@ PKG_LONGDESC="debug is a Metapackage for installing debugging tools"
 # configure GPU drivers and dependencies:
   get_graphicdrivers
 
-if [ "$DISTRO" = "Lakka" ]; then
+if [ "$DISTRO" = "NircadaOS" ]; then
   VAAPI_SUPPORT=no
 fi
 

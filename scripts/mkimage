@@ -157,8 +157,8 @@ menuentry "Run" {
 }
 EOF
 
-  # Lakka - default = live = use medium for storage
-  if [ "$DISTRO" = "Lakka" ]; then
+  # NircadaOS - default = live = use medium for storage
+  if [ "$DISTRO" = "NircadaOS" ]; then
     cat << EOF > "${LE_TMP}/syslinux.cfg"
 SAY Wait for live mode to start automatically in 5 seconds...
 SAY

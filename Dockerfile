@@ -1,13 +1,13 @@
 #
-# Lakka Dockerfile
+# Nircada OS Dockerfile
 #
-# Allows building Lakka via Docker. This will install all the necessary libraries
+# Allows building Nircada OS via Docker. This will install all the necessary libraries
 # and dependencies in this Ubuntu 20.04 docker container.
 #
 # Usage:
 #
-#    docker build -t lakka .
-#    docker run --rm -it -v $(pwd):/home/ubuntu lakka
+#    docker build -t NircadaOS .
+#    docker run --rm -it -v $(pwd):/home/ubuntu NircadaOS
 #
 # Once inside the docker container, you can start building e.g,.
 #
@@ -68,7 +68,7 @@ RUN echo "ubuntu ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/90-cloudimg-ubuntu
 USER ubuntu
 WORKDIR /home/ubuntu
 ENV HOME /home/ubuntu
-ENV DISTRO Lakka
+ENV DISTRO NircadaOS
 VOLUME /home/ubuntu
 
 CMD bash
