@@ -39,3 +39,6 @@ mkpkg-temp
 # created by docker container
 .bash_history
 .wget-hsts
+.parallel/tmp/sshlogin/3804917bd4a2/cpuspec
+.parallel/tmp/sshlogin/3804917bd4a2/linelen
+.parallel/tmp/sshlogin/3804917bd4a2/setpgrp_func

@@ -6,8 +6,8 @@
 #
 # Usage:
 #
-#    docker build -t NircadaOS .
-#    docker run --rm -it -v $(pwd):/home/ubuntu NircadaOS
+#    docker build -t nircada .
+#    docker run --rm -it -v $(pwd):/home/ubuntu nircada
 #
 # Once inside the docker container, you can start building e.g,.
 #
@@ -21,12 +21,16 @@
 FROM ubuntu:focal
 
 ENV DEBIAN_FRONTEND=noninteractive
+RUN echo "deb http://security.ubuntu.com/ubuntu xenial-security main" >> /etc/apt/sources.list
 RUN apt-get update \
 	&& apt-get upgrade -y \
 	&& apt-get install -y \
 		liblz4-tool \
 		python3 \
 		libc6-dev-i386 \
+		libssl1.0.0 \
+		gettext \
+		libgettextpo-dev \
 		python2-minimal \
 		default-jre \
 		sudo \
