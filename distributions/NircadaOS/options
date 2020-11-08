@@ -14,10 +14,10 @@
   DESCRIPTION="Nircada OS is a fast and user-friendly retroarch turnkey distribution"
 
 # Welcome Message for e.g. SSH Server (up to 5 Lines)
-  GREETING0="###############################################"
+  GREETING0="################################################"
   GREETING1="# Nircada OS - The DIY retro emulation console #"
-  GREETING2="# .... visit https://nircada.weebly.com/ .... #"
-  GREETING3="###############################################"
+  GREETING2="# .... visit https://nircada.weebly.com/ ....  #"
+  GREETING3="################################################"
   GREETING4=""
 
 # Root password to integrate in the target system
