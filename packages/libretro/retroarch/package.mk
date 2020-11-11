@@ -25,7 +25,7 @@ PKG_ARCH="any"
 PKG_LICENSE="GPLv3"
 PKG_SITE="https://github.com/libretro/RetroArch"
 PKG_GIT_URL="$PKG_SITE"
-PKG_DEPENDS_TARGET="toolchain alsa-lib freetype zlib retroarch-assets retroarch-overlays core-info retroarch-joypad-autoconfig lakka-update libretro-database ffmpeg libass libvdpau libxkbfile xkeyboard-config libxkbcommon joyutils sixpair empty"
+PKG_DEPENDS_TARGET="toolchain alsa-lib freetype zlib retroarch-assets retroarch-overlays core-info retroarch-joypad-autoconfig nircada-update libretro-database ffmpeg libass libvdpau libxkbfile xkeyboard-config libxkbcommon joyutils sixpair empty"
 PKG_PRIORITY="optional"
 PKG_SECTION="libretro"
 PKG_SHORTDESC="Reference frontend for the libretro API."
@@ -83,8 +83,8 @@ if [[ "$TARGET_FPU" =~ "neon" ]]; then
   RETROARCH_NEON="--enable-neon"
 fi
 
-if [ "$LAKKA_NIGHTLY" = yes ]; then
-  CFLAGS="$CFLAGS -DHAVE_LAKKA_NIGHTLY"
+if [ "$NIRCADA_NIGHTLY" = yes ]; then
+  CFLAGS="$CFLAGS -DHAVE_NIRCADA_NIGHTLY"
 fi
 
 TARGET_CONFIGURE_OPTS=""
@@ -108,7 +108,7 @@ pre_configure_target() {
 }
 
 make_target() {
-  make V=1 HAVE_LAKKA=1 HAVE_ZARCH=0
+  make V=1 HAVE_NIRCADA=1 HAVE_ZARCH=0
   make -C gfx/video_filters compiler=$CC extra_flags="$CFLAGS"
   make -C libretro-common/audio/dsp_filters compiler=$CC extra_flags="$CFLAGS"
 }

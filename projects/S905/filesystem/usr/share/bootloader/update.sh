@@ -34,10 +34,10 @@ for arg in $(cat /proc/cmdline); do
       boot="${arg#*=}"
       case $boot in
         /dev/mmc*)
-          LD_LIBRARY_PATH="$SYSTEM_ROOT/lib" $SYSTEM_ROOT/usr/sbin/fatlabel $boot "LAKKA"
+          LD_LIBRARY_PATH="$SYSTEM_ROOT/lib" $SYSTEM_ROOT/usr/sbin/fatlabel $boot "NIRCADA"
           ;;
         LABEL=*)
-          LD_LIBRARY_PATH="$SYSTEM_ROOT/lib" $SYSTEM_ROOT/usr/sbin/fatlabel $($SYSTEM_ROOT/usr/sbin/findfs $boot) "LAKKA"
+          LD_LIBRARY_PATH="$SYSTEM_ROOT/lib" $SYSTEM_ROOT/usr/sbin/fatlabel $($SYSTEM_ROOT/usr/sbin/findfs $boot) "NIRCADA"
           ;;
       esac
 
@@ -66,10 +66,10 @@ for arg in $(cat /proc/cmdline); do
       disk="${arg#*=}"
       case $disk in
         /dev/mmc*)
-          LD_LIBRARY_PATH="$SYSTEM_ROOT/lib" $SYSTEM_ROOT/usr/sbin/e2label $disk "LAKKA_DISK"
+          LD_LIBRARY_PATH="$SYSTEM_ROOT/lib" $SYSTEM_ROOT/usr/sbin/e2label $disk "NIRCADA_DISK"
           ;;
         LABEL=*)
-          LD_LIBRARY_PATH="$SYSTEM_ROOT/lib" $SYSTEM_ROOT/usr/sbin/e2label $($SYSTEM_ROOT/usr/sbin/findfs $disk) "LAKKA_DISK"
+          LD_LIBRARY_PATH="$SYSTEM_ROOT/lib" $SYSTEM_ROOT/usr/sbin/e2label $($SYSTEM_ROOT/usr/sbin/findfs $disk) "NIRCADA_DISK"
           ;;
       esac
       ;;

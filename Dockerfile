@@ -1,12 +1,12 @@
 #
-# Lakka Dockerfile
+# NircadaOS Dockerfile
 #
-# Allows building Lakka through Docker.
+# Allows building NircadaOS through Docker.
 #
 # Usage:
 #
-#    docker build -t lakka .
-#    docker run -it -v $(pwd):/root lakka
+#    docker build -t nircada .
+#    docker run -it -v $(pwd):/root nircada
 #
 
 FROM ubuntu:xenial
@@ -46,7 +46,7 @@ RUN apt-get update \
 	&& rm -rf /var/lib/apt/lists/*
 
 ENV HOME /root
-ENV DISTRO Lakka
+ENV DISTRO NircadaOS
 
 VOLUME /root
 

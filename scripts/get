@@ -82,8 +82,8 @@ rm -f $STAMP_URL $STAMP_SHA
 
 if [ -n "$PKG_GIT_URL" -a -z "$PKG_URL" ]; then
 
-  if [ -n "$LAKKA_MIRROR" ]; then
-    PACKAGE_MIRROR="$LAKKA_MIRROR/$PKG_SOURCE_NAME"
+  if [ -n "$NIRCADA_MIRROR" ]; then
+    PACKAGE_MIRROR="$NIRCADA_MIRROR/$PKG_SOURCE_NAME"
     if [ "$NO_MIRROR" == "yes" ]; then
       NBWGET=0
     else
@@ -183,7 +183,7 @@ if [ -n "$PKG_GIT_URL" -a -z "$PKG_URL" ]; then
     echo "${CALC_SHA256}" > $STAMP_SHA
 
   else
-    echo -e "${boldred}WARNING${endcolor} Package '$PKG_NAME' not downloaded! Use\n\n\tDISTRO=Lakka $0\n\nto download Lakka libretro git-based packages!\n\n"
+    echo -e "${boldred}WARNING${endcolor} Package '$PKG_NAME' not downloaded! Use\n\n\tDISTRO=NircadaOS $0\n\nto download Lakka libretro git-based packages!\n\n"
   fi
 
   exit 0

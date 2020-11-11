@@ -60,11 +60,11 @@ echo add default decoder ppmgr deinterlace amvideo > /sys/class/vfm/map
 
 cmdline=$(cat /proc/cmdline)
 
-# Add information where to run Lakka from
+# Add information where to run NircadaOS from
 if [ -n "$bootfromsd" ]; then
   cmdline="$cmdline BOOT_IMAGE=kernel.img boot=/dev/mmcblk0p1 disk=/dev/mmcblk0p2"
 elif [ -n "$bootfromusb" ]; then
-  cmdline="$cmdline BOOT_IMAGE=kernel.img boot=LABEL=LAKKA disk=LABEL=LAKKA_DISK"
+  cmdline="$cmdline BOOT_IMAGE=kernel.img boot=LABEL=NIRCADA disk=LABEL=NIRCADA_DISK"
 else
   cmdline="$cmdline BOOT_IMAGE=/dev/boot boot=/dev/system disk=/dev/data"
 fi

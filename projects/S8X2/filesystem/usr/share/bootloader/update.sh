@@ -27,10 +27,10 @@ for arg in $(cat /proc/cmdline); do
       boot="${arg#*=}"
       case $boot in
         /dev/mmc*)
-          $SYSTEM_ROOT/usr/sbin/fatlabel $boot "LAKKA"
+          $SYSTEM_ROOT/usr/sbin/fatlabel $boot "NIRCADA"
           ;;
         LABEL=*)
-          $SYSTEM_ROOT/usr/sbin/fatlabel $($SYSTEM_ROOT/sbin/findfs $boot) "LAKKA"
+          $SYSTEM_ROOT/usr/sbin/fatlabel $($SYSTEM_ROOT/sbin/findfs $boot) "NIRCADA"
           ;;
       esac
       ;;
@@ -38,10 +38,10 @@ for arg in $(cat /proc/cmdline); do
       disk="${arg#*=}"
       case $disk in
         /dev/mmc*)
-          $SYSTEM_ROOT/sbin/e2label $disk "LAKKA_DISK"
+          $SYSTEM_ROOT/sbin/e2label $disk "NIRCADA_DISK"
           ;;
         LABEL=*)
-          $SYSTEM_ROOT/sbin/e2label $($SYSTEM_ROOT/sbin/findfs $disk) "LAKKA_DISK"
+          $SYSTEM_ROOT/sbin/e2label $($SYSTEM_ROOT/sbin/findfs $disk) "NIRCADA_DISK"
           ;;
       esac
       ;;

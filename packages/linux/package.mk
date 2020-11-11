@@ -34,7 +34,7 @@ case "$LINUX" in
     ;;
   linux-odroidc-3.10.y)
     PKG_VERSION="6ac660c"
-    PKG_URL="$LAKKA_MIRROR/$PKG_NAME-$PKG_VERSION.tar.xz"
+    PKG_URL="$NIRCADA_MIRROR/$PKG_NAME-$PKG_VERSION.tar.xz"
     ;;
   hardkernel)
     PKG_VERSION="3b08361"

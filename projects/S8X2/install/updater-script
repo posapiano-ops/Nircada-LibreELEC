@@ -19,4 +19,4 @@ unmount("/system");
 set_bootloader_env("upgrade_step", "2");
 show_progress(0.100000, 0);
 
-ui_print("Lakka Installed Successfully");
+ui_print("NircadaOS Installed Successfully");

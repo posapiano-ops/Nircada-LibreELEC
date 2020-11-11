@@ -29,7 +29,7 @@ hdmimode="1080p60hz"
 if [ -z "$BOOT_IMAGE" -o -z "$boot" -o -z "$disk" ]; then
   cmdline=$(cat /proc/cmdline)
   if [ -n "$bootfromext" ]; then
-    cmdline="$cmdline BOOT_IMAGE=kernel.img boot=LABEL=LAKKA disk=LABEL=LAKKA_DISK"
+    cmdline="$cmdline BOOT_IMAGE=kernel.img boot=LABEL=NIRCADA disk=LABEL=NIRCADA_DISK"
   else
     cmdline="$cmdline BOOT_IMAGE=/dev/boot boot=/dev/system disk=/dev/data"
   fi

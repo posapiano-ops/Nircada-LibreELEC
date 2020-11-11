@@ -34,12 +34,12 @@ elif [ "$UBOOT_VERSION" = "hardkernel" ]; then
 elif [ "$UBOOT_VERSION" = "odroidxu3" ]; then
   PKG_VERSION="88af53fb"
   PKG_SITE="https://github.com/hardkernel/u-boot/tree/odroidxu4-v2017.05"
-  PKG_URL="$LAKKA_MIRROR/u-boot-$PKG_VERSION.tar.xz"
+  PKG_URL="$NIRCADA_MIRROR/u-boot-$PKG_VERSION.tar.xz"
   PKG_DEPENDS_TARGET="$PKG_DEPENDS_TARGET dtc:host hk-bootloader"
 elif [ "$UBOOT_VERSION" = "odroidc" ]; then
   PKG_VERSION="86125f8"
   PKG_SITE="http://odroid.com/dokuwiki/doku.php?id=en:c1_building_u-boot"
-  PKG_URL="$LAKKA_MIRROR/u-boot-$PKG_VERSION.tar.xz"
+  PKG_URL="$NIRCADA_MIRROR/u-boot-$PKG_VERSION.tar.xz"
   PKG_DEPENDS_TARGET="$PKG_DEPENDS_TARGET gcc-linaro-arm-eabi:host"
 elif [ "$UBOOT_VERSION" = "allwinner" ]; then
   PKG_VERSION="2017.11"

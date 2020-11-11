@@ -9,7 +9,7 @@ usage()
   echo ""
   echo "Parameters:"
   echo " -a --all                 Update all libretro packages"
-  echo " -u --used                Update only libretro packages used by Lakka"
+  echo " -u --used                Update only libretro packages used by NircadaOS"
   echo " -p list --packages list  Update listed libretro packages"
   echo " -e list --exclude list   Update all/used packages except listed ones"
   echo ""
@@ -73,8 +73,8 @@ case $1 in
           ;;
       esac
     fi
-    # Get list of cores, which are used with Lakka:
-    OPTIONS_FILE="distributions/Lakka/options"
+    # Get list of cores, which are used with NircadaOS:
+    OPTIONS_FILE="distributions/NircadaOS/options"
     [ -f "$OPTIONS_FILE" ] && source "$OPTIONS_FILE" || { echo "$OPTIONS_FILE: not found! Aborting." ; exit 1 ; }
     [ -z "$LIBRETRO_CORES" ] && { echo "LIBRETRO_CORES: empty. Aborting!" ; exit 1 ; }
     # List of core retroarch packages

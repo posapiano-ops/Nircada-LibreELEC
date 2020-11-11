@@ -21,6 +21,6 @@ for pr in projects/*/linux/*.conf; do
 done
 
 for pr in projects/*; do
-  res=${pr/projects/packages\/lakka}
+  res=${pr/projects/packages\/nircada}
   [[ "$res" = "" ]] && >&2 echo "OEM package missing for $pr"
 done

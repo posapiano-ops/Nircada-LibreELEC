@@ -67,7 +67,7 @@ if [ -n "$CUSTOM_GIT_HASH" ]; then
   GIT_HASH="$CUSTOM_GIT_HASH"
 fi
 
-# Lakka specific naming scheme
+# NircadaOS specific naming scheme
 if [ -n "$SYSTEM" ]; then
   LIBREELEC_ARCH="$PROJECT.$SYSTEM.$TARGET_ARCH"
 elif [ -n "$BOARD" ]; then

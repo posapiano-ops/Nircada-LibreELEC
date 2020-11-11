@@ -3,7 +3,7 @@ usage() {
 	echo ""
 	echo "$0 <build|clean> <package>"
 	echo ""
-	echo "Builds/cleans a package for all projects/devices/systems of Lakka"
+	echo "Builds/cleans a package for all projects/devices/systems of NIrcadaOS"
 	echo ""
 }
 
@@ -61,7 +61,7 @@ package=$2
 declare -i failed=0
 failed_targets=""
 skipped_targets=""
-distro="Lakka"
+distro="NircadaOS"
 source distributions/${distro}/options
 if [ -z "$OS_VERSION" -o -z "$LIBREELEC_VERSION" ]; then
 	echo "OS_VERSION or LIBREELEC_VERSION empty / not set in 'distributions/${distro}/options'!"
