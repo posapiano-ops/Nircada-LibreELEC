@@ -32,6 +32,19 @@ index 883fc79..ca942dc 100644
  # Does not depend on HAVE_MENU
  ifeq ($(HAVE_SHADERS_COMMON), 1)
     OBJ += menu/menu_shader.o
+diff --git a/README.md b/README.md
+index ff828e3..cced186 100644
+--- a/README.md
++++ b/README.md
+@@ -1,7 +1,7 @@
+ [![Build Status](https://travis-ci.org/libretro/RetroArch.svg?branch=master)](https://travis-ci.org/libretro/RetroArch)
+ [![Coverity Scan Build Status](https://scan.coverity.com/projects/8936/badge.svg)](https://scan.coverity.com/projects/retroarch)
+ 
+-# RetroArch
++# RetroArch 1.8.4 (Nircada integration)
+ 
+ RetroArch is the reference frontend for the libretro API.
+ Popular examples of implementations for this API includes video game system emulators and game engines as well as
 diff --git a/config.def.h b/config.def.h
 index 496d4f5..40ca7b5 100644
 --- a/config.def.h
@@ -598,7 +611,7 @@ index 4faa703..23f1486 100644
        "Aktiviere Fernzugriff auf die Kommandozeile.")
  #endif
 diff --git a/intl/msg_hash_el.h b/intl/msg_hash_el.h
-index d6e81da..e8c192b 100644
+index d6e81da..4c92503 100644
 --- a/intl/msg_hash_el.h
 +++ b/intl/msg_hash_el.h
 @@ -410,7 +410,7 @@ MSG_HASH(
@@ -641,6 +654,17 @@ index d6e81da..e8c192b 100644
  MSG_HASH(
      MENU_ENUM_LABEL_VALUE_SSH_ENABLE,
      "Ενεργοποίηση SSH"
+@@ -2179,8 +2185,8 @@ MSG_HASH(
+     "Υποστήριξη KMS/EGL"
+     )
+ MSG_HASH(
+-    MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_LAKKA_VERSION,
+-    "Έκδοση Lakka"
++    MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_NIRCADA_VERSION,
++    "Έκδοση NircadaOS"
+     )
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_LIBRETRODB_SUPPORT,
 @@ -2495,8 +2501,8 @@ MSG_HASH(
      "Ενημέρωση Σκιάσεων GLSL"
      )
@@ -1917,7 +1941,7 @@ index bcaefc0..45e8827 100644
      MENU_ENUM_LABEL_VALUE_LOCALAP_ENABLE,
      "Ponto de Acesso Wi-Fi"
 diff --git a/intl/msg_hash_pt_pt.h b/intl/msg_hash_pt_pt.h
-index e8c9ab0..5a023da 100644
+index e8c9ab0..f0ce8a7 100644
 --- a/intl/msg_hash_pt_pt.h
 +++ b/intl/msg_hash_pt_pt.h
 @@ -370,7 +370,7 @@ MSG_HASH(
@@ -1945,7 +1969,7 @@ index e8c9ab0..5a023da 100644
  MSG_HASH(MENU_ENUM_LABEL_VALUE_RDB_ENTRY_TGDB_RATING,
        "Classificação TGDB")
 -#ifdef HAVE_LAKKA_SWITCH
-+#if defined(HAVE_LAKKA)_SWITCH || defined(HAVE_NIRCADA_SWITCH)
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_NIRCADA_SWITCH)
  MSG_HASH(MENU_ENUM_LABEL_VALUE_REBOOT,
        "Reinicializar (RCM)")
  #else
