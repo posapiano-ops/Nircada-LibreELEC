@@ -54,7 +54,7 @@ RUN apt-get update \
 		xsltproc \
 		xz-utils \
 		zip \
-		zliblg-dev \
+		zlibl1g-dev \
 	&& rm -rf /var/lib/apt/lists/*
 
 ENV HOME /root
