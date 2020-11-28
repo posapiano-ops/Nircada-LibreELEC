@@ -6,14 +6,14 @@
 # Usage:
 #
 #    docker build -t nircada .
-#    docker run --rm -it -v $(pwd):/home/ubuntu nircada
+#    docker run --rm -it -v $(pwd):/root nircada
 #
 # Once inside the docker container, you can start building e.g,.
 #
 #   DISTRO=NircadaOS PROJECT=Generic ARCH=x86_64 make image
 #   DISTRO=NircadaOS PROJECT=Generic ARCH=i386 make image
-#	DISTRO=NircadaOS PROJECT=RPi DEVICE=RPi ARCH=arm make image
-#   DISTRO=NircadaOS PROJECT=RPi DEVICE=RPi ARCH=arm make image 
+#	DISTRO=NircadaOS PROJECT=RPi ARCH=arm make image
+#   DISTRO=NircadaOS PROJECT=RPi2 ARCH=arm make image 
 #
 # Bulding a single package:
 #
@@ -54,18 +54,12 @@ RUN apt-get update \
 		xsltproc \
 		xz-utils \
 		zip \
+		zliblg-dev \
 	&& rm -rf /var/lib/apt/lists/*
 
-#ENV HOME /root
-#ENV DISTRO NircadaOS
-#VOLUME /root
-#WORKDIR /root
-#CMD make image
-RUN useradd -rm -d /home/ubuntu -s /bin/bash -g root -G sudo -u 1000 ubuntu
-RUN echo "ubuntu ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/90-cloudimg-ubuntu
-USER ubuntu
-WORKDIR /home/ubuntu
-ENV HOME /home/ubuntu
+ENV HOME /root
 ENV DISTRO NircadaOS
-VOLUME /home/ubuntu
+VOLUME /root
+WORKDIR /root
+#CMD make image
 CMD bash

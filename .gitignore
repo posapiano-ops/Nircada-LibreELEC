@@ -32,6 +32,6 @@ mkpkg-temp
 
 # crap
 .DS_Store
+
 packages/x11/driver/xf86-video-nvidia-legacy/udev.d
-packages/x11/driver/xf86-video-nvidia-legacy/udev.d
-packages/x11/driver/xf86-video-nvidia-legacy/udev.d
+

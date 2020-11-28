@@ -1,7 +1,7 @@
 # Name of the Distro to build (full name, without special characters)
   DISTRONAME="NircadaOS"
-  LIBREELEC_VERSION="tooronto"
-  OS_VERSION="0.2.5"
+  LIBREELEC_VERSION="devel"
+  OS_VERSION="0.3.7"
   
   DISTRO_WEBSITE="https://nircada.weebly.com/"
   
@@ -12,11 +12,11 @@
   DESCRIPTION="The DIY retro emulation console"
 
 # Welcome Message for e.g. SSH Server (up to 5 Lines)
-  GREETING0="   \ | _)                     |          _ \    __| "
-  GREETING1="  .  |  |   _| _|   _` |   _` |   _` |  (   | \__ \ "
-  GREETING2=" _|\_| _| _| \__| \__,_| \__,_| \__,_| \___/  ____/ "
-  GREETING3="            The retro emulation console             "
-  GREETING4=""
+  GREETING0=""
+  GREETING1="   \ | _)                     |          _ \    __| "
+  GREETING2="  .  |  |   _| _|   _\` |   _\` |   _\` |  (   | \__ \ "
+  GREETING3=" _|\_| _| _| \__| \__,_| \__,_| \__,_| \___/  ____/ "
+  GREETING4="                   Gaming Start                     "
 
 # Root password to integrate in the target system
   ROOT_PASSWORD="root"

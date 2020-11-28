@@ -29,6 +29,8 @@ PKG_SECTION="security"
 PKG_SHORTDESC="The Open Source toolkit for Secure Sockets Layer and Transport Layer Security"
 PKG_LONGDESC="The Open Source toolkit for Secure Sockets Layer and Transport Layer Security"
 
+MAKEFLAGS="-j1"
+
 PKG_IS_ADDON="no"
 PKG_AUTORECONF="no"
 
@@ -98,6 +100,8 @@ configure_target() {
 makeinstall_target() {
   make INSTALL_PREFIX=$INSTALL install_sw
   make INSTALL_PREFIX=$SYSROOT_PREFIX install_sw
+  # https://forum.libreelec.tv/thread/14975-openssl-compilation-issue/?postID=114573#post114573
+  # LD_LIBRARY_PATH= make INSTALL_PREFIX=$SYSROOT_PREFIX install_sw
   chmod 755 $INSTALL/usr/lib/*.so*
   chmod 755 $INSTALL/usr/lib/engines/*.so
 }

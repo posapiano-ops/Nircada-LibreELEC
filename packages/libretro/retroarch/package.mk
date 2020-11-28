@@ -19,11 +19,11 @@
 ################################################################################
 
 PKG_NAME="retroarch"
-PKG_VERSION="9e25601"
+PKG_VERSION="b4bfdcf"
 PKG_REV="11"
 PKG_ARCH="any"
 PKG_LICENSE="GPLv3"
-PKG_SITE="https://github.com/libretro/RetroArch"
+PKG_SITE="https://github.com/posapiano-ops/RetroArch"
 PKG_GIT_URL="$PKG_SITE"
 PKG_DEPENDS_TARGET="toolchain alsa-lib freetype zlib retroarch-assets retroarch-overlays core-info retroarch-joypad-autoconfig nircada-update libretro-database ffmpeg libass libvdpau libxkbfile xkeyboard-config libxkbcommon joyutils sixpair empty"
 PKG_PRIORITY="optional"

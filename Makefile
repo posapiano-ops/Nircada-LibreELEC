@@ -15,7 +15,7 @@ else
 	endif
 endif
 
-BUILD_DIRS=build.${_D}-${_P}.*
+BUILD_DIRS=build.${_D}-${_P}*
 
 all: release
 

@@ -1,0 +1,4580 @@
+diff --git a/Makefile.common b/Makefile.common
+index 883fc79..ca942dc 100644
+--- a/Makefile.common
++++ b/Makefile.common
+@@ -538,6 +538,10 @@ ifeq ($(HAVE_LAKKA), 1)
+    OBJ += wifi/drivers/connmanctl.o
+ endif
+ 
++ifeq ($(HAVE_NIRCADA), 1)
++   OBJ += wifi/drivers/connmanctl.o
++endif
++
+ # Audio
+ 
+ ifeq ($(HAVE_COREAUDIO), 1)
+@@ -780,10 +784,18 @@ ifeq ($(HAVE_LAKKA), 1)
+    DEFINES += -DHAVE_LAKKA
+ endif
+ 
++ifeq ($(HAVE_NIRCADA), 1)
++   DEFINES += -DHAVE_NIRCADA
++endif
++
+ ifeq ($(HAVE_LAKKA_SWITCH), 1)
+    DEFINES += -DHAVE_LAKKA_SWITCH
+ endif
+ 
++ifeq ($(HAVE_NIRCADA_SWITCH), 1)
++   DEFINES += -DHAVE_NIRCADA_SWITCH
++endif
++
+ # Does not depend on HAVE_MENU
+ ifeq ($(HAVE_SHADERS_COMMON), 1)
+    OBJ += menu/menu_shader.o
+diff --git a/config.def.h b/config.def.h
+index 496d4f5..40ca7b5 100644
+--- a/config.def.h
++++ b/config.def.h
+@@ -182,7 +182,7 @@
+ 
+ #define DEFAULT_USER_LANGUAGE 0
+ 
+-#if (defined(_WIN32) && !defined(_XBOX)) || (defined(__linux) && !defined(ANDROID) && !defined(HAVE_LAKKA)) || (defined(__MACH__) && !defined(IOS)) || defined(EMSCRIPTEN)
++#if (defined(_WIN32) && !defined(_XBOX)) || (defined(__linux) && !defined(ANDROID) && !defined(HAVE_LAKKA) && !defined(HAVE_NIRCADA)) || (defined(__MACH__) && !defined(IOS)) || defined(EMSCRIPTEN)
+ #define DEFAULT_MOUSE_ENABLE true
+ #else
+ #define DEFAULT_MOUSE_ENABLE false
+@@ -490,7 +490,7 @@ static bool menu_show_quit_retroarch     = true;
+ static bool menu_show_restart_retroarch  = true;
+ static bool menu_show_reboot             = true;
+ static bool menu_show_shutdown           = true;
+-#if defined(HAVE_LAKKA) || defined(VITA) || defined(_3DS)
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA) || defined(VITA) || defined(_3DS)
+ static bool menu_show_core_updater       = false;
+ #else
+ static bool menu_show_core_updater       = true;
+@@ -536,7 +536,7 @@ static unsigned xmb_menu_layout       = 0;
+ static unsigned xmb_icon_theme        = XMB_ICON_THEME_MONOCHROME;
+ static unsigned xmb_theme             = XMB_THEME_ELECTRIC_BLUE;
+ 
+-#if defined(HAVE_LAKKA) || defined(__arm__) || defined(__PPC64__) || defined(__ppc64__) || defined(__powerpc64__) || defined(__powerpc__) || defined(__ppc__) || defined(__POWERPC__)
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA) || defined(__arm__) || defined(__PPC64__) || defined(__ppc64__) || defined(__powerpc64__) || defined(__powerpc__) || defined(__ppc__) || defined(__POWERPC__)
+ #define DEFAULT_XMB_SHADOWS_ENABLE false
+ #else
+ #define DEFAULT_XMB_SHADOWS_ENABLE true
+diff --git a/configuration.c b/configuration.c
+index c339e9e..4366a60 100644
+--- a/configuration.c
++++ b/configuration.c
+@@ -46,6 +46,7 @@
+ #include "retroarch.h"
+ #include "verbosity.h"
+ #include "lakka.h"
++#include "nircada.h"
+ 
+ #include "tasks/task_content.h"
+ #include "tasks/tasks_internal.h"
+@@ -564,7 +565,7 @@ static enum camera_driver_enum CAMERA_DEFAULT_DRIVER = CAMERA_ANDROID;
+ static enum camera_driver_enum CAMERA_DEFAULT_DRIVER = CAMERA_NULL;
+ #endif
+ 
+-#if defined(HAVE_LAKKA)
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ static enum wifi_driver_enum WIFI_DEFAULT_DRIVER = WIFI_CONNMANCTL;
+ #else
+ static enum wifi_driver_enum WIFI_DEFAULT_DRIVER = WIFI_NULL;
+@@ -2144,6 +2145,13 @@ void config_set_defaults(void *data)
+    settings->bools.localap_enable              = false;
+ #endif
+ 
++#ifdef HAVE_NIRCADA
++   settings->bools.ssh_enable                  = filestream_exists(NIRCADA_SSH_PATH);
++   settings->bools.samba_enable                = filestream_exists(NIRCADA_SAMBA_PATH);
++   settings->bools.bluetooth_enable            = filestream_exists(NIRCADA_BLUETOOTH_PATH);
++   settings->bools.localap_enable              = false;
++#endif
++
+ #ifdef HAVE_MENU
+    if (first_initialized)
+       settings->bools.menu_show_start_screen   = default_menu_show_start_screen;
+@@ -3113,6 +3121,12 @@ static bool config_load_file(global_t *global,
+    settings->bools.bluetooth_enable = filestream_exists(LAKKA_BLUETOOTH_PATH);
+ #endif
+ 
++#ifdef HAVE_NIRCADA
++   settings->bools.ssh_enable       = filestream_exists(NIRCADA_SSH_PATH);
++   settings->bools.samba_enable     = filestream_exists(NIRCADA_SAMBA_PATH);
++   settings->bools.bluetooth_enable = filestream_exists(NIRCADA_BLUETOOTH_PATH);
++#endif
++
+    if (!retroarch_override_setting_is_set(RARCH_OVERRIDE_SETTING_SAVE_PATH, NULL) &&
+          config_get_path(conf, "savefile_directory", tmp_str, path_size))
+    {
+@@ -3937,6 +3951,27 @@ bool config_save_file(const char *path)
+       filestream_delete(LAKKA_BLUETOOTH_PATH);
+ #endif
+ 
++#ifdef HAVE_NIRCADA
++   if (settings->bools.ssh_enable)
++      filestream_close(filestream_open(NIRCADA_SSH_PATH,
++               RETRO_VFS_FILE_ACCESS_WRITE,
++               RETRO_VFS_FILE_ACCESS_HINT_NONE));
++   else
++      filestream_delete(NIRCADA_SSH_PATH);
++   if (settings->bools.samba_enable)
++      filestream_close(filestream_open(NIRCADA_SAMBA_PATH,
++               RETRO_VFS_FILE_ACCESS_WRITE,
++               RETRO_VFS_FILE_ACCESS_HINT_NONE));
++   else
++      filestream_delete(NIRCADA_SAMBA_PATH);
++   if (settings->bools.bluetooth_enable)
++      filestream_close(filestream_open(NIRCADA_BLUETOOTH_PATH,
++               RETRO_VFS_FILE_ACCESS_WRITE,
++               RETRO_VFS_FILE_ACCESS_HINT_NONE));
++   else
++      filestream_delete(NIRCADA_BLUETOOTH_PATH);
++#endif
++
+    for (i = 0; i < MAX_USERS; i++)
+       input_config_save_keybinds_user(conf, i);
+ 
+diff --git a/file_path_special.h b/file_path_special.h
+index a6b13d2..bcf7b55 100644
+--- a/file_path_special.h
++++ b/file_path_special.h
+@@ -53,6 +53,7 @@ enum file_path_enum
+    FILE_PATH_SHADERS_CG_ZIP,
+    FILE_PATH_CHEATS_ZIP,
+    FILE_PATH_LAKKA_URL,
++   FILE_PATH_NIRCADA_URL,
+    FILE_PATH_CORE_THUMBNAILS_URL,
+    FILE_PATH_CORE_THUMBNAILPACKS_URL,
+    FILE_PATH_INDEX_DIRS_URL,
+diff --git a/file_path_str.c b/file_path_str.c
+index 97e7e16..a2d5efc 100644
+--- a/file_path_str.c
++++ b/file_path_str.c
+@@ -162,6 +162,13 @@ const char *file_path_str(enum file_path_enum enum_idx)
+          str = "http://nightly.builds.lakka.tv/.updater";
+ #else
+          str = "http://le.builds.lakka.tv";
++#endif
++         break;
++      case FILE_PATH_NIRCADA_URL:
++#ifdef HAVE_NIRCADA_NIGHTLY
++         str = "http://nightly.bandanet.org/nircada/.updater";
++#else
++         str = "http://nircada.bandanet.org";
+ #endif
+          break;
+       case FILE_PATH_SHADERS_GLSL_ZIP:
+diff --git a/frontend/drivers/platform_ps2.c b/frontend/drivers/platform_ps2.c
+index e1e56df..5623945 100644
+--- a/frontend/drivers/platform_ps2.c
++++ b/frontend/drivers/platform_ps2.c
+@@ -410,6 +410,9 @@ frontend_ctx_driver_t frontend_ctx_ps2 = {
+    NULL,                         /* detach_console */
+ #ifdef HAVE_LAKKA
+    NULL,                         /* get_lakka_version */
++#endif
++#ifdef HAVE_NIRCADA
++   NULL,                         /* get_nircada_version */
+ #endif
+    NULL,                         /* watch_path_for_changes */
+    NULL,                         /* check_for_path_changes */
+diff --git a/frontend/drivers/platform_unix.c b/frontend/drivers/platform_unix.c
+index 253af4f..67d92ab 100644
+--- a/frontend/drivers/platform_unix.c
++++ b/frontend/drivers/platform_unix.c
+@@ -1086,7 +1086,7 @@ static bool frontend_unix_powerstate_check_acpi_sysfs(
+    {
+       const char *node = retro_dirent_get_name(entry);
+ 
+-#ifdef HAVE_LAKKA_SWITCH
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_NIRCADA_SWITCH)
+       if (node && strstr(node, "max170xx_battery"))
+ #else
+       if (node && strstr(node, "BAT"))
+@@ -1278,6 +1278,26 @@ static void frontend_unix_get_lakka_version(char *s,
+ }
+ #endif
+ 
++#ifdef HAVE_NIRCADA
++static void frontend_unix_get_nircada_version(char *s,
++      size_t len)
++{
++   char version[128];
++   size_t vlen;
++   FILE *command_file = popen("cat /etc/release", "r");
++
++   fgets(version, sizeof(version), command_file);
++   vlen = strlen(version);
++
++   if (vlen > 0 && version[vlen-1] == '\n')
++      version[--vlen] = '\0';
++
++   strlcpy(s, version, len);
++
++   pclose(command_file);
++}
++#endif
++
+ static void frontend_unix_get_env(int *argc,
+       char *argv[], void *data, void *params_data)
+ {
+@@ -2471,6 +2491,9 @@ frontend_ctx_driver_t frontend_ctx_unix = {
+    NULL,                         /* detach_console */
+ #ifdef HAVE_LAKKA
+    frontend_unix_get_lakka_version,    /* get_lakka_version */
++#endif
++#ifdef HAVE_NIRCADA
++   frontend_unix_get_nircada_version,    /* get_nircada_version */
+ #endif
+    frontend_unix_watch_path_for_changes,
+    frontend_unix_check_for_path_changes,
+diff --git a/frontend/frontend_driver.c b/frontend/frontend_driver.c
+index 1fc6f96..4aaf40b 100644
+--- a/frontend/frontend_driver.c
++++ b/frontend/frontend_driver.c
+@@ -62,6 +62,9 @@ static frontend_ctx_driver_t frontend_ctx_null = {
+    NULL,                         /* detach_console */
+ #ifdef HAVE_LAKKA
+    NULL,                         /* get_lakka_version */
++#endif
++#ifdef HAVE_NIRCADA
++   NULL,                         /* get_nircada_version */
+ #endif
+    NULL,                         /* watch_path_for_changes */
+    NULL,                         /* check_for_path_changes */
+diff --git a/frontend/frontend_driver.h b/frontend/frontend_driver.h
+index 2fcab26..905faa0 100644
+--- a/frontend/frontend_driver.h
++++ b/frontend/frontend_driver.h
+@@ -104,6 +104,9 @@ typedef struct frontend_ctx_driver
+    void (*detach_console)(void);
+ #ifdef HAVE_LAKKA
+    void (*get_lakka_version)(char *, size_t);
++#endif
++#ifdef HAVE_NIRCADA
++   void (*get_nircada_version)(char *, size_t);
+ #endif
+    void (*watch_path_for_changes)(struct string_list *list, int flags, path_change_data_t **change_data);
+    bool (*check_for_path_changes)(path_change_data_t *change_data);
+diff --git a/griffin/griffin.c b/griffin/griffin.c
+index 5f8bd10..5451047 100644
+--- a/griffin/griffin.c
++++ b/griffin/griffin.c
+@@ -1122,7 +1122,7 @@ RETROARCH
+ /*============================================================
+ WIFI
+ ============================================================ */
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ #include "../wifi/drivers/connmanctl.c"
+ #endif
+ 
+diff --git a/intl/msg_hash_chs.h b/intl/msg_hash_chs.h
+index ba36d37..5d1a6db 100644
+--- a/intl/msg_hash_chs.h
++++ b/intl/msg_hash_chs.h
+@@ -6,7 +6,7 @@
+ #pragma warning(disable:4566)
+ #endif
+ 
+-#ifdef HAVE_LAKKA_SWITCH
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_NIRCADA_SWITCH)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_SWITCH_GPU_PROFILE,
+     "GPU 超频"
+@@ -24,7 +24,7 @@ MSG_HASH(
+     "调整 Switch 的屏幕亮度"
+     )
+ #endif
+-#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX)
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX) || defined(HAVE_NIRCADA_SWITCH)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_SWITCH_CPU_PROFILE,
+     "CPU 超频"
+@@ -403,7 +403,7 @@ MSG_HASH(
+       MENU_ENUM_LABEL_VALUE_BLOCK_SRAM_OVERWRITE,
+       "加载即时存档时不覆盖游戏自带存档"
+       )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+       MENU_ENUM_LABEL_VALUE_BLUETOOTH_ENABLE,
+       "启用蓝牙服务"
+@@ -904,6 +904,10 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_JOYPAD_DRIVER,
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_LAKKA_SERVICES,
+       "Lakka 服务")
+ #endif
++#ifdef HAVE_NIRCADA
++MSG_HASH(MENU_ENUM_LABEL_VALUE_NIRCADA_SERVICES,
++      "NircadaOS 服务")
++#endif
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_LANG_CHINESE_SIMPLIFIED,
+       "简体中文")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_LANG_CHINESE_TRADITIONAL,
+@@ -1278,7 +1282,7 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_RDB_ENTRY_START_CONTENT,
+       "启动游戏内容")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_RDB_ENTRY_TGDB_RATING,
+       "TGDB 评分")
+-#ifdef HAVE_LAKKA_SWITCH
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_NIRCADA_SWITCH)
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_REBOOT,
+       "重启 (RCM)")
+ #else
+@@ -1367,7 +1371,7 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_RUN,
+       "运行")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_RUN_MUSIC,
+       "运行")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_SAMBA_ENABLE,
+       "启用SAMBA文件共享服务")
+ #endif
+@@ -1445,7 +1449,7 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_SORT_SAVEFILES_ENABLE,
+       "排序文件夹中的游戏存档")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_SORT_SAVESTATES_ENABLE,
+       "排序文件夹中的即时存档")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_SSH_ENABLE,
+       "启用SSH远程终端服务")
+ #endif
+@@ -1687,8 +1691,8 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_DATABASES,
+       "更新数据库")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_GLSL_SHADERS,
+       "更新 GLSL 渲染器效果文件")
+-MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_LAKKA,
+-      "更新 Lakka")
++MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_NIRCADA,
++      "更新 NircadaOS")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_OVERLAYS,
+       "更新图层")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_SLANG_SHADERS,
+@@ -1954,7 +1958,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_ADD_CONTENT_LIST,
+       "下载、扫描游戏内容，并将其加入你的收藏中。")
+ MSG_HASH(MENU_ENUM_SUBLABEL_AUDIO_SETTINGS,
+       "调整音频输出的选项。")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_SUBLABEL_BLUETOOTH_ENABLE,
+       "启用或者禁止蓝牙。")
+ #endif
+@@ -1989,7 +1993,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_INFORMATION_LIST_LIST,
+       "显示数据库和光标的管理器。")
+ MSG_HASH(MENU_ENUM_SUBLABEL_ONLINE_UPDATER,
+       "下载并更新 RetroArch 的附加插件和组件。")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_SUBLABEL_SAMBA_ENABLE,
+       "启用或者禁止网络文件夹共享(SAMBA)。")
+ MSG_HASH(MENU_ENUM_SUBLABEL_SERVICES_SETTINGS,
+@@ -1997,7 +2001,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_SERVICES_SETTINGS,
+ #endif
+ MSG_HASH(MENU_ENUM_SUBLABEL_SHOW_HIDDEN_FILES,
+       "在文件浏览器中显示隐藏的文件或文件夹。")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_SUBLABEL_SSH_ENABLE,
+       "启用或者禁止远程终端访问(SSH)。")
+ #endif
+diff --git a/intl/msg_hash_cht.h b/intl/msg_hash_cht.h
+index 96e4275..a836243 100644
+--- a/intl/msg_hash_cht.h
++++ b/intl/msg_hash_cht.h
+@@ -371,7 +371,7 @@ MSG_HASH(
+       MENU_ENUM_LABEL_VALUE_BLOCK_SRAM_OVERWRITE,
+       "載入儲存狀態時不覆蓋SaveRAM"
+       )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+       MENU_ENUM_LABEL_VALUE_BLUETOOTH_ENABLE,
+       "啟用藍牙服務"
+@@ -858,6 +858,10 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_JOYPAD_DRIVER,
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_LAKKA_SERVICES,
+       "Lakka 服務")
+ #endif
++#ifdef HAVE_NIRCADA
++MSG_HASH(MENU_ENUM_LABEL_VALUE_NIRCADA_SERVICES,
++      "NircadaOS 服務")
++#endif
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_LANG_CHINESE_SIMPLIFIED,
+       "簡體中文")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_LANG_CHINESE_TRADITIONAL,
+@@ -1184,7 +1188,7 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_RDB_ENTRY_START_CONTENT,
+       "啟動遊戲內容")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_RDB_ENTRY_TGDB_RATING,
+       "TGDB 評分")
+-#ifdef HAVE_LAKKA_SWITCH
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_NIRCADA_SWITCH)
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_REBOOT,
+       "重啟 (RCM)")
+ #else
+@@ -1249,7 +1253,7 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_RIGHT_ANALOG,
+       "右側搖桿")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_RUN,
+       "運行")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_SAMBA_ENABLE,
+       "啟用SAMBA文件共享服務")
+ #endif
+@@ -1321,7 +1325,7 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_SORT_SAVEFILES_ENABLE,
+       "排序文件夾中的存檔")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_SORT_SAVESTATES_ENABLE,
+       "排序文件夾中的狀態存儲")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_SSH_ENABLE,
+       "啟用SSH遠程終端服務")
+ #endif
+@@ -1533,8 +1537,8 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_DATABASES,
+       "更新數據庫")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_GLSL_SHADERS,
+       "更新GLSL Shader效果文件")
+-MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_LAKKA,
+-      "更新 Lakka")
++MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_NIRCADA,
++      "更新 NircadaOS")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_OVERLAYS,
+       "更新覆層")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_SLANG_SHADERS,
+@@ -1765,7 +1769,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_ADD_CONTENT_LIST,
+       "下載且/或者掃瞄遊戲內容，並將其加入你的收藏中。")
+ MSG_HASH(MENU_ENUM_SUBLABEL_AUDIO_SETTINGS,
+       "調整聲音輸出的選項。")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_SUBLABEL_BLUETOOTH_ENABLE,
+       "啟用或者禁止藍牙。")
+ #endif
+@@ -1797,7 +1801,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_INFORMATION_LIST_LIST,
+       "顯示核心、網路和系統的訊息。顯示數據庫和光標的管理器。")
+ MSG_HASH(MENU_ENUM_SUBLABEL_ONLINE_UPDATER,
+       "下載並更新RetroArch的附加插件和組件。")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_SUBLABEL_SAMBA_ENABLE,
+       "啟用或者禁止網路文件夾共享(SAMBA)。")
+ MSG_HASH(MENU_ENUM_SUBLABEL_SERVICES_SETTINGS,
+@@ -1805,7 +1809,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_SERVICES_SETTINGS,
+ #endif
+ MSG_HASH(MENU_ENUM_SUBLABEL_SHOW_HIDDEN_FILES,
+       "在文件瀏覽器中顯示隱藏的文件或文件夾。")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_SUBLABEL_SSH_ENABLE,
+       "啟用或者禁止遠程終端訪問(SSH)。")
+ #endif
+@@ -2483,7 +2487,7 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_MENU_SHOW_HELP,
+       "顯示 Help")
+ MSG_HASH(MENU_ENUM_SUBLABEL_MENU_SHOW_HELP,
+       "顯示/隱藏 the 'Help' option.")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_MENU_SHOW_QUIT_RETROARCH,
+       "顯示 Restart RetroArch")
+ MSG_HASH(MENU_ENUM_SUBLABEL_MENU_SHOW_QUIT_RETROARCH,
+diff --git a/intl/msg_hash_de.h b/intl/msg_hash_de.h
+index 4faa703..23f1486 100644
+--- a/intl/msg_hash_de.h
++++ b/intl/msg_hash_de.h
+@@ -6,7 +6,7 @@
+ #pragma warning(disable:4566)
+ #endif
+ 
+-#ifdef HAVE_LAKKA_SWITCH
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_NIRCADA_SWITCH)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_SWITCH_GPU_PROFILE,
+     "GPU Übertakten"
+@@ -24,7 +24,7 @@ MSG_HASH(
+     "Anpassen der Switch Bildschirmhelligkeit"
+     )
+ #endif
+-#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX)
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX) || defined(HAVE_NIRCADA_SWITCH)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_SWITCH_CPU_PROFILE,
+     "CPU Übertakten"
+@@ -406,7 +406,7 @@ MSG_HASH(
+       MENU_ENUM_LABEL_VALUE_BLOCK_SRAM_OVERWRITE,
+       "Überschreibe SaveRAM nicht, wenn ein Zustand (Savestate) geladen wird"
+       )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+       MENU_ENUM_LABEL_VALUE_BLUETOOTH_ENABLE,
+       "Bluetooth aktivieren"
+@@ -917,6 +917,10 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_JOYPAD_DRIVER,
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_LAKKA_SERVICES,
+       "Services")
+ #endif
++#ifdef HAVE_NIRCADA
++MSG_HASH(MENU_ENUM_LABEL_VALUE_NIRCADA_SERVICES,
++      "Services")
++#endif
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_LANG_CHINESE_SIMPLIFIED,
+       "Chinesisch (vereinfacht)")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_LANG_CHINESE_TRADITIONAL,
+@@ -1291,7 +1295,7 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_RDB_ENTRY_START_CONTENT,
+       "Starte Inhalt")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_RDB_ENTRY_TGDB_RATING,
+       "TGDB-Bewertung")
+-#ifdef HAVE_LAKKA_SWITCH
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_NIRCADA_SWITCH)
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_REBOOT,
+       "Neustart (RCM)")
+ #else
+@@ -1366,7 +1370,7 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_RUN,
+       "Starten")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_RUN_MUSIC,
+       "Abspielen")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_SAMBA_ENABLE,
+       "SAMBA aktivieren")
+ #endif
+@@ -1446,7 +1450,7 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_SYSTEMFILES_IN_CONTENT_DIR_ENABLE,
+       "Systemdateien befinden sich im Verzeichnis des Inhalts")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_SCREENSHOTS_IN_CONTENT_DIR_ENABLE,
+       "Bildschirmfotos im Verzeichnis des Inhalts speichern")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_SSH_ENABLE,
+       "SSH aktivieren")
+ #endif
+@@ -1528,8 +1532,8 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_JACK_SUPPORT,
+       "JACK-Unterstützung")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_KMS_SUPPORT,
+       "KMS/EGL-Unterstützung")
+-MSG_HASH(MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_LAKKA_VERSION,
+-      "Lakka-Version")
++MSG_HASH(MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_NIRCADA_VERSION,
++      "NircadaOS-Version")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_LIBRETRODB_SUPPORT,
+       "LibretroDB-Unterstützung")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_LIBUSB_SUPPORT,
+@@ -1660,8 +1664,8 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_DATABASES,
+       "Datenbanken aktualisieren")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_GLSL_SHADERS,
+       "GLSL-Shader aktualisieren")
+-MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_LAKKA,
+-      "Lakka aktualisieren")
++MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_NIRCADA,
++      "NircadaOS aktualisieren")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_OVERLAYS,
+       "Overlays aktualisieren")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_SLANG_SHADERS,
+@@ -1934,7 +1938,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_ADD_CONTENT_LIST,
+       "Sucht nach Inhalten und fügt diese zur Datenbank hinzu.")
+ MSG_HASH(MENU_ENUM_SUBLABEL_AUDIO_SETTINGS,
+       "Ändere die Einstellungen der Audio-Ausgabe.")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_SUBLABEL_BLUETOOTH_ENABLE,
+       "Aktiviere oder deaktiviere Bluetooth.")
+ #endif
+@@ -1966,7 +1970,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_INFORMATION_LIST_LIST,
+       "Zeige Informationen über Core, Netzwerk und das System an.")
+ MSG_HASH(MENU_ENUM_SUBLABEL_ONLINE_UPDATER,
+       "Lade Erweiterungen, Komponenten und Inhalte für RetroArch herunter.")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_SUBLABEL_SAMBA_ENABLE,
+       "Aktiviere die Netzwerkfreigabe deiner Ordner.")
+ MSG_HASH(MENU_ENUM_SUBLABEL_SERVICES_SETTINGS,
+@@ -1974,7 +1978,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_SERVICES_SETTINGS,
+ #endif
+ MSG_HASH(MENU_ENUM_SUBLABEL_SHOW_HIDDEN_FILES,
+       "Zeige versteckte Dateien und Ordner im Dateimanager an.")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_SUBLABEL_SSH_ENABLE,
+       "Aktiviere Fernzugriff auf die Kommandozeile.")
+ #endif
+diff --git a/intl/msg_hash_el.h b/intl/msg_hash_el.h
+index d6e81da..e8c192b 100644
+--- a/intl/msg_hash_el.h
++++ b/intl/msg_hash_el.h
+@@ -410,7 +410,7 @@ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_BLOCK_SRAM_OVERWRITE,
+     "Απενεργοποίηση αντικατάστασης SaveRAM κατά την φάση φόρτωσης κατάστασης αποθήκευσης"
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_BLUETOOTH_ENABLE,
+     "Ενεργοποίηση Bluetooth"
+@@ -1310,6 +1310,12 @@ MSG_HASH(
+     "Υπηρεσίες"
+     )
+ #endif
++#ifdef HAVE_NIRCADA
++MSG_HASH(
++    MENU_ENUM_LABEL_VALUE_NIRCADA_SERVICES,
++    "Υπηρεσίες"
++    )
++#endif
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_LANG_CHINESE_SIMPLIFIED,
+     "Κινέζικα (Απλοποιημένα)"
+@@ -1914,7 +1920,7 @@ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_RUN_MUSIC,
+     "Εκκίνηση"
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_SAMBA_ENABLE,
+     "Ενεργοποίηση SAMBA"
+@@ -2016,7 +2022,7 @@ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_SHUTDOWN,
+     "Τερματισμός"
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_SSH_ENABLE,
+     "Ενεργοποίηση SSH"
+@@ -2495,8 +2501,8 @@ MSG_HASH(
+     "Ενημέρωση Σκιάσεων GLSL"
+     )
+ MSG_HASH(
+-    MENU_ENUM_LABEL_VALUE_UPDATE_LAKKA,
+-    "Ενημέρωση Lakka"
++    MENU_ENUM_LABEL_VALUE_UPDATE_NIRCADA,
++    "Ενημέρωση NircadaOS"
+     )
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_UPDATE_OVERLAYS,
+@@ -2936,7 +2942,7 @@ MSG_HASH(
+     MENU_ENUM_SUBLABEL_AUDIO_SETTINGS,
+     "Αλλαγή ρυθμίσεων εξόδου ήχου."
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_SUBLABEL_BLUETOOTH_ENABLE,
+     "Ενεργοποίηση ή απενεργοποίηση bluetooth."
+diff --git a/intl/msg_hash_es.h b/intl/msg_hash_es.h
+index 01d0e08..2a24701 100644
+--- a/intl/msg_hash_es.h
++++ b/intl/msg_hash_es.h
+@@ -6,7 +6,7 @@
+ #pragma warning(disable:4566)
+ #endif
+ 
+-#ifdef HAVE_LAKKA_SWITCH
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_NIRCADA_SWITCH)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_SWITCH_GPU_PROFILE,
+     "Overclockear GPU"
+@@ -24,7 +24,7 @@ MSG_HASH(
+     "Ajusta el brillo de la pantalla."
+     )
+ #endif
+-#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX)
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX) || defined(HAVE_NIRCADA_SWITCH)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_SWITCH_CPU_PROFILE,
+     "Overclockear CPU"
+@@ -474,7 +474,7 @@ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_BLOCK_SRAM_OVERWRITE,
+     "No sobrescribir SaveRAM al cargar un guardado rápido"
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_BLUETOOTH_ENABLE,
+     "Activar Bluetooth"
+@@ -1418,7 +1418,7 @@ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_INPUT_META_PAUSE_TOGGLE,
+     "Pausar"
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_INPUT_META_QUIT_KEY,
+     "Reiniciar RetroArch"
+@@ -1599,6 +1599,12 @@ MSG_HASH(
+     "Servicios"
+     )
+ #endif
++#ifdef HAVE_NIRCADA
++MSG_HASH(
++    MENU_ENUM_LABEL_VALUE_NIRCADA_SERVICES,
++    "Servicios"
++    )
++#endif
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_LANG_CHINESE_SIMPLIFIED,
+     "Chino (Simplificado)"
+@@ -2487,7 +2493,7 @@ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_MIDI_SETTINGS,
+     "MIDI"
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_QUIT_RETROARCH,
+     "Reiniciar RetroArch"
+@@ -2646,7 +2652,7 @@ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_CONTENT_INFO_LAST_PLAYED,
+     "Última partida"
+     )
+-#ifdef HAVE_LAKKA_SWITCH
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_NIRCADA_SWITCH)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_REBOOT,
+     "Reiniciar (RCM)"
+@@ -2849,7 +2855,7 @@ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_RUN_MUSIC,
+     "Iniciar"
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_SAMBA_ENABLE,
+     "Activar SAMBA"
+@@ -3027,7 +3033,7 @@ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_SCREENSHOTS_IN_CONTENT_DIR_ENABLE,
+     "Escribir capturas de pantalla en la carpeta del contenido"
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_SSH_ENABLE,
+     "Activar SSH"
+@@ -3194,8 +3200,8 @@ MSG_HASH(
+     "Soporte de KMS/EGL"
+     )
+ MSG_HASH(
+-    MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_LAKKA_VERSION,
+-    "Versión de Lakka"
++    MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_NIRCADA_VERSION,
++    "Versión de NircadaOS"
+     )
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_LIBRETRODB_SUPPORT,
+@@ -3890,8 +3896,8 @@ MSG_HASH(
+     "Actualizar shaders GLSL"
+     )
+ MSG_HASH(
+-    MENU_ENUM_LABEL_VALUE_UPDATE_LAKKA,
+-    "Actualizar Lakka"
++    MENU_ENUM_LABEL_VALUE_UPDATE_NIRCADA,
++    "Actualizar NircadaOS"
+     )
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_UPDATE_OVERLAYS,
+@@ -4564,7 +4570,7 @@ MSG_HASH(
+     MENU_ENUM_SUBLABEL_AUDIO_SETTINGS,
+     "Cambia las opciones de salida de audio."
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_SUBLABEL_BLUETOOTH_ENABLE,
+     "Activa o desactiva la función de Bluetooth."
+@@ -4638,7 +4644,7 @@ MSG_HASH(
+     MENU_ENUM_SUBLABEL_ONLINE_UPDATER,
+     "Descarga componentes y contenido adicional para RetroArch."
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_SUBLABEL_SAMBA_ENABLE,
+     "Activa o desactiva el compartido de carpetas en red mediante el protocolo SMB."
+@@ -4652,7 +4658,7 @@ MSG_HASH(
+     MENU_ENUM_SUBLABEL_SHOW_HIDDEN_FILES,
+     "Muestra archivos y carpetas ocultos en el explorador de archivos."
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_SUBLABEL_SSH_ENABLE,
+     "Utiliza SSH para acceder a la línea de comandos de forma remota."
+@@ -5936,7 +5942,7 @@ MSG_HASH(
+     MENU_ENUM_SUBLABEL_SYSTEM_INFORMATION,
+     "Muestra información específica del dispositivo."
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_SUBLABEL_QUIT_RETROARCH,
+     "Reinicia el programa."
+@@ -7234,7 +7240,7 @@ MSG_HASH(
+     MENU_ENUM_SUBLABEL_MENU_SHOW_HELP,
+     "Muestra la opción «Ayuda»."
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_MENU_SHOW_QUIT_RETROARCH,
+     "Mostrar Reiniciar RetroArch"
+@@ -10053,7 +10059,7 @@ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_DELETE_PLAYLIST,
+     "Borrar lista de reproducción"
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_LOCALAP_ENABLE,
+     "Punto de acceso wifi"
+diff --git a/intl/msg_hash_fr.h b/intl/msg_hash_fr.h
+index 342c07f..57ac720 100644
+--- a/intl/msg_hash_fr.h
++++ b/intl/msg_hash_fr.h
+@@ -6,7 +6,7 @@
+ #pragma warning(disable:4566)
+ #endif
+ 
+-#ifdef HAVE_LAKKA_SWITCH
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_NIRCADA_SWITCH)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_SWITCH_GPU_PROFILE,
+     "Overclocker le processeur graphique"
+@@ -24,7 +24,7 @@ MSG_HASH(
+     "Augmenter ou réduire la luminosité de l'écran de la Switch"
+     )
+ #endif
+-#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX)
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX) || defined(HAVE_NIRCADA_SWITCH)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_SWITCH_CPU_PROFILE,
+     "Overclocker le processeur"
+@@ -474,7 +474,7 @@ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_BLOCK_SRAM_OVERWRITE,
+     "Ne pas écraser la SRAM en chargeant la sauvegarde instantanée"
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_BLUETOOTH_ENABLE,
+     "Bluetooth"
+@@ -1418,7 +1418,7 @@ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_INPUT_META_PAUSE_TOGGLE,
+     "Mettre en pause/reprendre"
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_INPUT_META_QUIT_KEY,
+     "Redémarrer RetroArch"
+@@ -1591,6 +1591,12 @@ MSG_HASH(
+     "Services"
+     )
+ #endif
++#ifdef HAVE_NIRCADA
++MSG_HASH(
++    MENU_ENUM_LABEL_VALUE_NIRCADA_SERVICES,
++    "Services"
++    )
++#endif
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_LANG_CHINESE_SIMPLIFIED,
+     "Chinois (Simplifié)"
+@@ -2479,7 +2485,7 @@ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_MIDI_SETTINGS,
+     "MIDI"
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_QUIT_RETROARCH,
+     "Redémarrer RetroArch"
+@@ -2638,7 +2644,7 @@ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_CONTENT_INFO_LAST_PLAYED,
+     "Dernière partie"
+     )
+-#ifdef HAVE_LAKKA_SWITCH
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_NIRCADA_SWITCH)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_REBOOT,
+     "Redémarrer en mode RCM"
+@@ -2841,7 +2847,7 @@ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_RUN_MUSIC,
+     "Lancer"
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_SAMBA_ENABLE,
+     "SAMBA"
+@@ -3019,7 +3025,7 @@ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_SCREENSHOTS_IN_CONTENT_DIR_ENABLE,
+     "Enregistrer les captures d'écran avec le contenu"
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_SSH_ENABLE,
+     "SSH"
+@@ -3186,8 +3192,8 @@ MSG_HASH(
+     "Prise en charge de KMS/EGL "
+     )
+ MSG_HASH(
+-    MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_LAKKA_VERSION,
+-    "Version de Lakka "
++    MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_NIRCADA_VERSION,
++    "Version de Nircada "
+     )
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_LIBRETRODB_SUPPORT,
+@@ -3882,8 +3888,8 @@ MSG_HASH(
+     "Mettre à jour les shaders GLSL"
+     )
+ MSG_HASH(
+-    MENU_ENUM_LABEL_VALUE_UPDATE_LAKKA,
+-    "Mettre à jour Lakka"
++    MENU_ENUM_LABEL_VALUE_UPDATE_NIRCADA,
++    "Mettre à jour NircadaOS"
+     )
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_UPDATE_OVERLAYS,
+@@ -4557,7 +4563,7 @@ MSG_HASH(
+     MENU_ENUM_SUBLABEL_AUDIO_SETTINGS,
+     "Modifier les réglages de sortie audio."
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_SUBLABEL_BLUETOOTH_ENABLE,
+     "Déterminer l'état de Bluetooth."
+@@ -4631,7 +4637,7 @@ MSG_HASH(
+     MENU_ENUM_SUBLABEL_ONLINE_UPDATER,
+     "Télécharger des add-ons, des composants et du contenu pour RetroArch."
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_SUBLABEL_SAMBA_ENABLE,
+     "Partage des dossiers réseau via le protocole SMB."
+@@ -4645,7 +4651,7 @@ MSG_HASH(
+     MENU_ENUM_SUBLABEL_SHOW_HIDDEN_FILES,
+     "Affiche les fichiers/dossiers cachés dans le navigateur de fichiers."
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_SUBLABEL_SSH_ENABLE,
+     "Utiliser SSH pour accéder à la ligne de commande à distance."
+@@ -5917,7 +5923,7 @@ MSG_HASH(
+     MENU_ENUM_SUBLABEL_SYSTEM_INFORMATION,
+     "Affiche les informations spécifiques à l'appareil."
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_SUBLABEL_QUIT_RETROARCH,
+     "Redémarrer le programme."
+@@ -7215,7 +7221,7 @@ MSG_HASH(
+     MENU_ENUM_SUBLABEL_MENU_SHOW_HELP,
+     "Afficher/masquer l'option 'Aide'."
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_MENU_SHOW_QUIT_RETROARCH,
+     "Afficher 'Redémarrer RetroArch'"
+@@ -10034,7 +10040,7 @@ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_DELETE_PLAYLIST,
+     "Supprimer la liste de lecture"
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_LOCALAP_ENABLE,
+     "Point d'accès Wi-Fi"
+diff --git a/intl/msg_hash_it.h b/intl/msg_hash_it.h
+index f35b356..7ebc9f9 100644
+--- a/intl/msg_hash_it.h
++++ b/intl/msg_hash_it.h
+@@ -6,7 +6,7 @@
+ #pragma warning(disable:4566)
+ #endif
+ 
+-#ifdef HAVE_LAKKA_SWITCH
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_NIRCADA_SWITCH)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_SWITCH_GPU_PROFILE,
+     "Overclocca la GPU"
+@@ -24,7 +24,7 @@ MSG_HASH(
+     "Aumenta o diminuisce la luminosità dello schermo del Nintendo Switch"
+     )
+ #endif
+-#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX)
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX) || defined(HAVE_NIRCADA_SWITCH)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_SWITCH_CPU_PROFILE,
+     "Overclocca la CPU"
+@@ -410,7 +410,7 @@ MSG_HASH(
+       MENU_ENUM_LABEL_VALUE_BLOCK_SRAM_OVERWRITE,
+       "Non sovrascrivere il SaveRAM durante il caricamento del salvataggio"
+       )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+       MENU_ENUM_LABEL_VALUE_BLUETOOTH_ENABLE,
+       "Bluetooth Abilitato"
+@@ -925,6 +925,10 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_JOYPAD_DRIVER,
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_LAKKA_SERVICES,
+       "Servizi")
+ #endif
++#ifdef HAVE_NIRCADA
++MSG_HASH(MENU_ENUM_LABEL_VALUE_NIRCADA_SERVICES,
++      "Servizi")
++#endif
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_LANG_CHINESE_SIMPLIFIED,
+       "Cinese (Semplificato)")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_LANG_CHINESE_TRADITIONAL,
+@@ -1299,7 +1303,7 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_RDB_ENTRY_START_CONTENT,
+       "Avvia il contenuto")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_RDB_ENTRY_TGDB_RATING,
+       "Valutazione TGDB ")
+-#ifdef HAVE_LAKKA_SWITCH
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_NIRCADA_SWITCH)
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_REBOOT,
+       "Riavvia (RCM)")
+ #else
+@@ -1376,7 +1380,7 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_RUN,
+       "Avvia")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_RUN_MUSIC,
+       "Avvia")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_SAMBA_ENABLE,
+       "Abilita SAMBA")
+ #endif
+@@ -1456,7 +1460,7 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_SYSTEMFILES_IN_CONTENT_DIR_ENABLE,
+       "I file di sistema sono contenuti nella directory")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_SCREENSHOTS_IN_CONTENT_DIR_ENABLE,
+       "Scrivi gli Screenshots contenuti nella directory")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_SSH_ENABLE,
+       "Abilita SSH")
+ #endif
+@@ -1544,8 +1548,8 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_JACK_SUPPORT,
+       "Supporto JACK ")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_KMS_SUPPORT,
+       "Supporto KMS/EGL ")
+-MSG_HASH(MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_LAKKA_VERSION,
+-      "Versione Lakka")
++MSG_HASH(MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_NIRCADA_VERSION,
++      "Versione NircadaOS")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_LIBRETRODB_SUPPORT,
+       "Supporto LibretroDB ")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_LIBUSB_SUPPORT,
+@@ -1676,8 +1680,8 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_DATABASES,
+       "Aggiorna i Database")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_GLSL_SHADERS,
+       "Aggiorna GLSL Shaders")
+-MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_LAKKA,
+-      "Aggiorna Lakka")
++MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_NIRCADA,
++      "Aggiorna NircadaOS")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_OVERLAYS,
+       "Aggiorna gli Overlay")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_SLANG_SHADERS,
+@@ -1948,7 +1952,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_ADD_CONTENT_LIST,
+       "Effettua la scansione del contenuto e li aggiunge al database.")
+ MSG_HASH(MENU_ENUM_SUBLABEL_AUDIO_SETTINGS,
+       "Modifica le impostazioni per l'uscita audio.")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_SUBLABEL_BLUETOOTH_ENABLE,
+       "Abilita o disabilita il bluetooth.")
+ #endif
+@@ -1982,7 +1986,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_INFORMATION_LIST_LIST,
+       "Visualizza le informazioni dei core, di rete e di sistema.")
+ MSG_HASH(MENU_ENUM_SUBLABEL_ONLINE_UPDATER,
+       "Scarica add-ons, componenti, e contenuti per RetroArch.")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_SUBLABEL_SAMBA_ENABLE,
+       "Attiva o disattiva la condivisione di rete delle tue cartelle")
+ MSG_HASH(MENU_ENUM_SUBLABEL_SERVICES_SETTINGS,
+@@ -1990,7 +1994,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_SERVICES_SETTINGS,
+ #endif
+ MSG_HASH(MENU_ENUM_SUBLABEL_SHOW_HIDDEN_FILES,
+       "Mostra file / directory nascoste all'interno del file browser.")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_SUBLABEL_SSH_ENABLE,
+       "Abilita o disabilita l'accesso alla riga di comando remota.")
+ #endif
+@@ -4012,7 +4016,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_MENU_WIDGETS_ENABLE,
+       "Usa animazioni, notifiche, indicatori e controlli decorati moderni invece del vecchio sistema di solo testo.")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_DELETE_PLAYLIST,
+       "Elimina scaletta")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_LOCALAP_ENABLE,
+       "Punto di accesso della Wi-Fi")
+ MSG_HASH(MENU_ENUM_SUBLABEL_LOCALAP_ENABLE,
+diff --git a/intl/msg_hash_ja.h b/intl/msg_hash_ja.h
+index 47894e6..aad0128 100644
+--- a/intl/msg_hash_ja.h
++++ b/intl/msg_hash_ja.h
+@@ -6,7 +6,7 @@
+ #pragma warning(disable:4566)
+ #endif
+ 
+-#ifdef HAVE_LAKKA_SWITCH
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_NIRCADA_SWITCH)
+ MSG_HASH(
+    MENU_ENUM_LABEL_VALUE_SWITCH_GPU_PROFILE,
+    "GPUオーバークロック"
+@@ -24,7 +24,7 @@ MSG_HASH(
+    "画面の明るさを増減します。"
+ )
+ #endif
+-#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX)
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX) || defined(HAVE_NIRCADA_SWITCH)
+ MSG_HASH(
+    MENU_ENUM_LABEL_VALUE_SWITCH_CPU_PROFILE,
+    "CPUオーバークロック"
+@@ -482,7 +482,7 @@ MSG_HASH(
+    MENU_ENUM_LABEL_VALUE_BLOCK_SRAM_OVERWRITE,
+    "ステートロード時にセーブRAMを置き換えない"
+ )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+    MENU_ENUM_LABEL_VALUE_BLUETOOTH_ENABLE,
+    "Bluetoothを有効"
+@@ -1352,7 +1352,7 @@ MSG_HASH(
+    MENU_ENUM_LABEL_VALUE_INPUT_META_PAUSE_TOGGLE,
+    "一時停止"
+ )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+    MENU_ENUM_LABEL_VALUE_INPUT_META_QUIT_KEY,
+    "RetroArchを終了"
+@@ -1517,6 +1517,12 @@ MSG_HASH(
+    "Lakkaのサービス"
+ )
+ #endif
++#ifdef HAVE_NIRCADA
++MSG_HASH(
++   MENU_ENUM_LABEL_VALUE_NIRCADA_SERVICES,
++   "NircadaOSのサービス"
++)
++#endif
+ MSG_HASH(
+    MENU_ENUM_LABEL_VALUE_LANG_CHINESE_SIMPLIFIED,
+    "中国語 (簡体)"
+@@ -2274,7 +2280,7 @@ MSG_HASH(
+    MENU_ENUM_LABEL_VALUE_MIDI_SETTINGS,
+    "MIDI"
+ )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+    MENU_ENUM_LABEL_VALUE_QUIT_RETROARCH,
+    "再起動"
+@@ -2433,7 +2439,7 @@ MSG_HASH(
+    MENU_ENUM_LABEL_VALUE_CONTENT_INFO_LAST_PLAYED,
+    "最終プレイ時刻"
+ )
+-#ifdef HAVE_LAKKA_SWITCH
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_NIRCADA_SWITCH)
+ MSG_HASH(
+    MENU_ENUM_LABEL_VALUE_REBOOT,
+    "再起動 (RCM)"
+@@ -2637,7 +2643,7 @@ MSG_HASH(
+    MENU_ENUM_LABEL_VALUE_RUN_MUSIC,
+    "実行"
+ )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+    MENU_ENUM_LABEL_VALUE_SAMBA_ENABLE,
+    "SAMBAを有効"
+@@ -2815,7 +2821,7 @@ MSG_HASH(
+    MENU_ENUM_LABEL_VALUE_SCREENSHOTS_IN_CONTENT_DIR_ENABLE,
+    "コンテンツフォルダにスクリーンショットを書き込む"
+ )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+    MENU_ENUM_LABEL_VALUE_SSH_ENABLE,
+    "SSHを有効"
+@@ -2982,8 +2988,8 @@ MSG_HASH(
+    "KMS/EGL対応"
+ )
+ MSG_HASH(
+-   MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_LAKKA_VERSION,
+-   "Lakkaバージョン"
++   MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_NIRCADA_VERSION,
++   "NircadaOSバージョン"
+ )
+ MSG_HASH(
+    MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_LIBRETRODB_SUPPORT,
+@@ -3645,8 +3651,8 @@ MSG_HASH(
+    "GLSLシェーダをアップデート"
+ )
+ MSG_HASH(
+-   MENU_ENUM_LABEL_VALUE_UPDATE_LAKKA,
+-   "Lakkaをアップデート"
++   MENU_ENUM_LABEL_VALUE_UPDATE_NIRCADA,
++   "NircadaOSをアップデート"
+ )
+ MSG_HASH(
+    MENU_ENUM_LABEL_VALUE_UPDATE_OVERLAYS,
+@@ -4318,7 +4324,7 @@ MSG_HASH(
+    MENU_ENUM_SUBLABEL_AUDIO_SETTINGS,
+    "オーディオ出力の設定を変更します。"
+ )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+    MENU_ENUM_SUBLABEL_BLUETOOTH_ENABLE,
+    "Bluetoothを有効します。"
+@@ -4392,7 +4398,7 @@ MSG_HASH(
+    MENU_ENUM_SUBLABEL_ONLINE_UPDATER,
+    "RetroArch用のアドオン, コンポーネント, コンテンツをダウンロードします。"
+ )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+    MENU_ENUM_SUBLABEL_SAMBA_ENABLE,
+    "フォルダのネットワーク共有を有効します。"
+@@ -4406,7 +4412,7 @@ MSG_HASH(
+    MENU_ENUM_SUBLABEL_SHOW_HIDDEN_FILES,
+    "ファイルブラウザの中に隠しファイルとフォルダを表示します。"
+ )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+    MENU_ENUM_SUBLABEL_SSH_ENABLE,
+    "SSHでのアクセスを有効します。"
+@@ -5656,7 +5662,7 @@ MSG_HASH(
+    MENU_ENUM_SUBLABEL_SYSTEM_INFORMATION,
+    "デバイス固有の情報を表示します。"
+ )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+    MENU_ENUM_SUBLABEL_QUIT_RETROARCH,
+    "RetroArchを終了します。"
+@@ -6951,7 +6957,7 @@ MSG_HASH(
+    MENU_ENUM_SUBLABEL_MENU_SHOW_HELP,
+    "[ヘルプ]オプションを表示/非表示にします。"
+ )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+    MENU_ENUM_LABEL_VALUE_MENU_SHOW_QUIT_RETROARCH,
+    "[終了]を表示"
+diff --git a/intl/msg_hash_ko.h b/intl/msg_hash_ko.h
+index 30f8d74..216dc36 100644
+--- a/intl/msg_hash_ko.h
++++ b/intl/msg_hash_ko.h
+@@ -5,7 +5,7 @@
+ #endif
+ #pragma warning(disable:4566)
+ #endif
+-#ifdef HAVE_LAKKA_SWITCH
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_NIRCADA_SWITCH)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_SWITCH_GPU_PROFILE,
+     "GPU 오버클럭"
+@@ -23,7 +23,7 @@ MSG_HASH(
+     "스위치 화면 밝기를 높이거나 낮춥니다"
+     )
+ #endif
+-#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX)
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX) || defined(HAVE_NIRCADA_SWITCH)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_SWITCH_CPU_PROFILE,
+     "CPU 오버클럭"
+@@ -473,7 +473,7 @@ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_BLOCK_SRAM_OVERWRITE,
+     "저장상태 불러올 때 SaveRAM 덮어쓰지 않기"
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_BLUETOOTH_ENABLE,
+     "블루투스 사용"
+@@ -1343,7 +1343,7 @@ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_INPUT_META_PAUSE_TOGGLE,
+     "일시정지 켜기/끄기"
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_INPUT_META_QUIT_KEY,
+     "RetroArch 재시작"
+@@ -1508,6 +1508,12 @@ MSG_HASH(
+     "서비스"
+     )
+ #endif
++#ifdef HAVE_NIRCADA
++MSG_HASH(
++    MENU_ENUM_LABEL_VALUE_NIRCADA_SERVICES,
++    "서비스"
++    )
++#endif
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_LANG_CHINESE_SIMPLIFIED,
+     "중국어 (간체)"
+@@ -2260,7 +2266,7 @@ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_MIDI_SETTINGS,
+     "MIDI"
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_QUIT_RETROARCH,
+     "RetroArch 다시 시작"
+@@ -2415,7 +2421,7 @@ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_CONTENT_INFO_LAST_PLAYED,
+     "최근 실행"
+     )
+-#ifdef HAVE_LAKKA_SWITCH
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_NIRCADA_SWITCH)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_REBOOT,
+     "재시작 (RCM)"
+@@ -2618,7 +2624,7 @@ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_RUN_MUSIC,
+     "재생"
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_SAMBA_ENABLE,
+     "SAMBA 사용"
+@@ -2796,7 +2802,7 @@ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_SCREENSHOTS_IN_CONTENT_DIR_ENABLE,
+     "스크린샷을 컨텐츠 폴더에 저장"
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_SSH_ENABLE,
+     "SSH 사용"
+@@ -2963,8 +2969,8 @@ MSG_HASH(
+     "KMS/EGL 지원"
+     )
+ MSG_HASH(
+-    MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_LAKKA_VERSION,
+-    "Lakka 버전"
++    MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_NIRCADA_VERSION,
++    "NircadaOS 버전"
+     )
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_LIBRETRODB_SUPPORT,
+@@ -3623,8 +3629,8 @@ MSG_HASH(
+     "GLSL 쉐이더 업데이트"
+     )
+ MSG_HASH(
+-    MENU_ENUM_LABEL_VALUE_UPDATE_LAKKA,
+-    "Lakka 업데이트"
++    MENU_ENUM_LABEL_VALUE_UPDATE_NIRCADA,
++    "NircadaOS 업데이트"
+     )
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_UPDATE_OVERLAYS,
+@@ -4302,7 +4308,7 @@ MSG_HASH(
+     MENU_ENUM_SUBLABEL_AUDIO_SETTINGS,
+     "오디오 출력 설정을 변경합니다."
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_SUBLABEL_BLUETOOTH_ENABLE,
+     "블루투스를 사용/해제합니다."
+@@ -4376,7 +4382,7 @@ MSG_HASH(
+     MENU_ENUM_SUBLABEL_ONLINE_UPDATER,
+     "RetroArch용 애드온, 구성요소 및 컨텐츠를 다운로드합니다."
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_SUBLABEL_SAMBA_ENABLE,
+     "네트워크 폴더 공유를 설정합니다."
+@@ -4390,7 +4396,7 @@ MSG_HASH(
+     MENU_ENUM_SUBLABEL_SHOW_HIDDEN_FILES,
+     "파일 탐색기에 숨김 파일/폴더를 보입니다."
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_SUBLABEL_SSH_ENABLE,
+     "원격 명령줄의 접근 사용을 설정합니다."
+@@ -5662,7 +5668,7 @@ MSG_HASH(
+     MENU_ENUM_SUBLABEL_SYSTEM_INFORMATION,
+     "시스템 관련 정보를 표시합니다."
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_SUBLABEL_QUIT_RETROARCH,
+     "프로그램을 재시작합니다."
+@@ -6908,7 +6914,7 @@ MSG_HASH(
+     MENU_ENUM_SUBLABEL_MENU_SHOW_HELP,
+     "도움말을 표시/해제합니다."
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_MENU_SHOW_QUIT_RETROARCH,
+     "RetroArch 재시작 표시"
+diff --git a/intl/msg_hash_lbl.h b/intl/msg_hash_lbl.h
+index 54fb67f..9cc4a82 100644
+--- a/intl/msg_hash_lbl.h
++++ b/intl/msg_hash_lbl.h
+@@ -1,10 +1,10 @@
+-#ifdef HAVE_LAKKA_SWITCH
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_NIRCADA_SWITCH)
+ MSG_HASH(MENU_ENUM_LABEL_SWITCH_GPU_PROFILE,
+       "switch_gpu_profile")
+ MSG_HASH(MENU_ENUM_LABEL_SWITCH_BACKLIGHT_CONTROL,
+       "switch_backlight_control")
+ #endif
+-#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX)
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX) || defined(HAVE_NIRCADA_SWITCH)
+ MSG_HASH(MENU_ENUM_LABEL_SWITCH_CPU_PROFILE,
+       "switch_cpu_profile")
+ #endif
+@@ -88,7 +88,7 @@ MSG_HASH(MENU_ENUM_LABEL_AUTO_SHADERS_ENABLE,
+       "auto_shaders_enable")
+ MSG_HASH(MENU_ENUM_LABEL_BLOCK_SRAM_OVERWRITE,
+       "block_sram_overwrite")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_LABEL_BLUETOOTH_ENABLE,
+       "bluetooth_enable")
+ #endif
+@@ -116,10 +116,10 @@ MSG_HASH(MENU_ENUM_LABEL_CB_CORE_UPDATER_LIST,
+       "cb_core_updater_list")
+ MSG_HASH(MENU_ENUM_LABEL_CB_DOWNLOAD_URL,
+       "cb_download_url")
+-MSG_HASH(MENU_ENUM_LABEL_CB_LAKKA_DOWNLOAD,
+-      "cb_lakka_download")
+-MSG_HASH(MENU_ENUM_LABEL_CB_LAKKA_LIST,
+-      "cb_lakka_list")
++MSG_HASH(MENU_ENUM_LABEL_CB_NIRCADA_DOWNLOAD,
++      "cb_nircada_download")
++MSG_HASH(MENU_ENUM_LABEL_CB_NIRCADA_LIST,
++      "cb_nircada_list")
+ MSG_HASH(MENU_ENUM_LABEL_CB_MENU_THUMBNAIL,
+       "cb_menu_thumbnail")
+ MSG_HASH(MENU_ENUM_LABEL_CB_MENU_WALLPAPER,
+@@ -384,10 +384,10 @@ MSG_HASH(MENU_ENUM_LABEL_DEFERRED_AI_SERVICE_SETTINGS_LIST,
+       "deferred_ai_service_settings_list")
+ MSG_HASH(MENU_ENUM_LABEL_DEFERRED_ACCESSIBILITY_SETTINGS_LIST,
+       "deferred_accessibility_settings_list")
+-MSG_HASH(MENU_ENUM_LABEL_DEFERRED_LAKKA_LIST,
+-      "deferred_lakka_list")
+-MSG_HASH(MENU_ENUM_LABEL_DEFERRED_LAKKA_SERVICES_LIST,
+-      "deferred_lakka_services_list")
++MSG_HASH(MENU_ENUM_LABEL_DEFERRED_NIRCADA_LIST,
++      "deferred_nircada_list")
++MSG_HASH(MENU_ENUM_LABEL_DEFERRED_NIRCADA_SERVICES_LIST,
++      "deferred_nircada_services_list")
+ MSG_HASH(MENU_ENUM_LABEL_DEFERRED_LOGGING_SETTINGS_LIST,
+       "deferred_logging_settings_list")
+ MSG_HASH(MENU_ENUM_LABEL_DEFERRED_MENU_FILE_BROWSER_SETTINGS_LIST,
+@@ -706,8 +706,8 @@ MSG_HASH(MENU_ENUM_LABEL_JOYPAD_AUTOCONFIG_DIR,
+       "joypad_autoconfig_dir")
+ MSG_HASH(MENU_ENUM_LABEL_JOYPAD_DRIVER,
+       "input_joypad_driver")
+-MSG_HASH(MENU_ENUM_LABEL_LAKKA_SERVICES,
+-      "lakka_services")
++MSG_HASH(MENU_ENUM_LABEL_NIRCADA_SERVICES,
++      "nircada_services")
+ MSG_HASH(MENU_ENUM_LABEL_LIBRETRO_DIR_PATH,
+       "libretro_dir_path")
+ MSG_HASH(MENU_ENUM_LABEL_LIBRETRO_INFO_PATH,
+@@ -1178,7 +1178,7 @@ MSG_HASH(MENU_ENUM_LABEL_RUN,
+       "collection")
+ MSG_HASH(MENU_ENUM_LABEL_RUN_MUSIC,
+       "collection_music")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_LABEL_SAMBA_ENABLE,
+       "samba_enable")
+ #endif
+@@ -1260,7 +1260,7 @@ MSG_HASH(MENU_ENUM_LABEL_SYSTEMFILES_IN_CONTENT_DIR_ENABLE,
+       "systemfiles_in_content_dir_enable")
+ MSG_HASH(MENU_ENUM_LABEL_SCREENSHOTS_IN_CONTENT_DIR_ENABLE,
+       "screenshots_in_content_dir_enable")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_LABEL_SSH_ENABLE,
+       "ssh_enable")
+ #endif
+@@ -1356,8 +1356,8 @@ MSG_HASH(MENU_ENUM_LABEL_UPDATE_DATABASES,
+       "update_databases")
+ MSG_HASH(MENU_ENUM_LABEL_UPDATE_GLSL_SHADERS,
+       "update_glsl_shaders")
+-MSG_HASH(MENU_ENUM_LABEL_UPDATE_LAKKA,
+-      "update_lakka")
++MSG_HASH(MENU_ENUM_LABEL_UPDATE_NIRCADA,
++      "update_NircdaOS")
+ MSG_HASH(MENU_ENUM_LABEL_UPDATE_OVERLAYS,
+       "update_overlays")
+ MSG_HASH(MENU_ENUM_LABEL_UPDATE_SLANG_SHADERS,
+@@ -2164,7 +2164,7 @@ MSG_HASH(MENU_ENUM_LABEL_FRAME_TIME_COUNTER_RESET_AFTER_SAVE_STATE,
+       "frame_time_counter_reset_after_save_state")
+ MSG_HASH(MENU_ENUM_LABEL_DELETE_PLAYLIST,
+       "delete_playlist")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_LABEL_LOCALAP_ENABLE,
+       "localap_enable")
+ #endif
+diff --git a/intl/msg_hash_nl.h b/intl/msg_hash_nl.h
+index 2794de9..77593f0 100644
+--- a/intl/msg_hash_nl.h
++++ b/intl/msg_hash_nl.h
+@@ -271,7 +271,7 @@ MSG_HASH(
+       MENU_ENUM_LABEL_VALUE_BLOCK_SRAM_OVERWRITE,
+       "SaveRAM niet overschrijven tijdens laden van savestate"
+       )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+       MENU_ENUM_LABEL_VALUE_BLUETOOTH_ENABLE,
+       "Bluetooth Activeren"
+@@ -768,6 +768,10 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_JOYPAD_DRIVER,
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_LAKKA_SERVICES,
+       "Services")
+ #endif
++#ifdef HAVE_NIRCADA
++MSG_HASH(MENU_ENUM_LABEL_VALUE_NIRCADA_SERVICES,
++      "Services")
++#endif
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_LANG_CHINESE_SIMPLIFIED,
+       "Chinees (Gesimplificeerd)")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_LANG_CHINESE_TRADITIONAL,
+@@ -1116,7 +1120,7 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_RDB_ENTRY_START_CONTENT,
+       "Content Opstarten")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_RDB_ENTRY_TGDB_RATING,
+       "TGDB Rating")
+-#ifdef HAVE_LAKKA_SWITCH
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_NIRCADA_SWITCH)
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_REBOOT,
+       "Herstart (RCM)")
+ #else
+@@ -1189,7 +1193,7 @@ MSG_HASH(
+     )
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_RUN,
+       "Run")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_SAMBA_ENABLE,
+       "SAMBA Enable")
+ #endif
+@@ -1259,7 +1263,7 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_SORT_SAVEFILES_ENABLE,
+       "Saves Sorteren In Map")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_SORT_SAVESTATES_ENABLE,
+       "Savestates Sorteren In Map")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_SSH_ENABLE,
+       "SSH Enable")
+ #endif
+@@ -1471,8 +1475,8 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_DATABASES,
+       "Update Databases")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_GLSL_SHADERS,
+       "Update GLSL Shaders")
+-MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_LAKKA,
+-      "Update Lakka")
++MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_NIRCADA,
++      "Update NircadaOS")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_OVERLAYS,
+       "Update Overlays")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_SLANG_SHADERS,
+@@ -1729,7 +1733,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_ADD_CONTENT_LIST,
+       "Scan contents and add to the database.")
+ MSG_HASH(MENU_ENUM_SUBLABEL_AUDIO_SETTINGS,
+       "Adjusts settings for audio output.")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_SUBLABEL_BLUETOOTH_ENABLE,
+       "Enable or disable bluetooth.")
+ #endif
+@@ -1759,7 +1763,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_INFORMATION_LIST_LIST,
+       "Toon core, netwerk en systeem informatie.")
+ MSG_HASH(MENU_ENUM_SUBLABEL_ONLINE_UPDATER,
+       "Download add-ons, components and contents for RetroArch.")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_SUBLABEL_SAMBA_ENABLE,
+       "Enable or disable network sharing of your folders.")
+ MSG_HASH(MENU_ENUM_SUBLABEL_SERVICES_SETTINGS,
+@@ -1767,7 +1771,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_SERVICES_SETTINGS,
+ #endif
+ MSG_HASH(MENU_ENUM_SUBLABEL_SHOW_HIDDEN_FILES,
+       "Show hidden files/directories inside the file browser.")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_SUBLABEL_SSH_ENABLE,
+       "Enable or disable remote command line access.")
+ #endif
+diff --git a/intl/msg_hash_pl.h b/intl/msg_hash_pl.h
+index 8964207..28e57bb 100644
+--- a/intl/msg_hash_pl.h
++++ b/intl/msg_hash_pl.h
+@@ -422,7 +422,7 @@ MSG_HASH(
+       MENU_ENUM_LABEL_VALUE_BLOCK_SRAM_OVERWRITE,
+       "Nie zastępuj SaveRAM przy ładowaniu stanu zapisu"
+       )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+       MENU_ENUM_LABEL_VALUE_BLUETOOTH_ENABLE,
+       "Włącz Bluetooth"
+@@ -955,6 +955,10 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_JOYPAD_DRIVER,
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_LAKKA_SERVICES,
+       "Usługi")
+ #endif
++#ifdef HAVE_NIRCADA
++MSG_HASH(MENU_ENUM_LABEL_VALUE_NIRCADA_SERVICES,
++      "Usługi")
++#endif
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_LANG_CHINESE_SIMPLIFIED,
+       "chiński (uproszczony)")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_LANG_CHINESE_TRADITIONAL,
+@@ -1349,7 +1353,7 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_RDB_ENTRY_START_CONTENT,
+       "Rozpocznij zawartość")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_RDB_ENTRY_TGDB_RATING,
+       "Ocena TGDB")
+-#ifdef HAVE_LAKKA_SWITCH
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_REBOOT,
+       "Restart (RCM)")
+ #else
+@@ -1428,7 +1432,7 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_RUN,
+       "Uruchom")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_RUN_MUSIC,
+       "Uruchom muzykę")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_SAMBA_ENABLE,
+       "Włącz SAMBA")
+ #endif
+@@ -1518,7 +1522,7 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_SYSTEMFILES_IN_CONTENT_DIR_ENABLE,
+       "Pliki systemowe znajdują się w katalogu treści")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_SCREENSHOTS_IN_CONTENT_DIR_ENABLE,
+       "Zapisuj zrzuty ekranu w katalog treści")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_SSH_ENABLE,
+       "Włącz SSH")
+ #endif
+@@ -1600,8 +1604,8 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_JACK_SUPPORT,
+       "Obsługa JACK")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_KMS_SUPPORT,
+       "Obsługa KMS/EGL")
+-MSG_HASH(MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_LAKKA_VERSION,
+-      "Wersja Lakka")
++MSG_HASH(MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_NIRCADA_VERSION,
++      "Wersja NircadaOS")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_LIBRETRODB_SUPPORT,
+       "Obsługa LibretroDB")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_LIBUSB_SUPPORT,
+@@ -1740,8 +1744,8 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_DATABASES,
+       "Zaktualizuj bazy danych")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_GLSL_SHADERS,
+       "Zaktualizuj shadery GLSL")
+-MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_LAKKA,
+-      "Zaktualizuj Lakka")
++MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_NIRCADA,
++      "Zaktualizuj NircadaOS")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_OVERLAYS,
+       "Zaktualizuj nakładki")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_SLANG_SHADERS,
+@@ -2030,7 +2034,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_ADD_CONTENT_LIST,
+       "Skanuj zawartość i dodaj do bazy danych.")
+ MSG_HASH(MENU_ENUM_SUBLABEL_AUDIO_SETTINGS,
+       "Zmień ustawienia wyjścia audio.")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_SUBLABEL_BLUETOOTH_ENABLE,
+       "Włącz lub wyłącz bluetooth.")
+ #endif
+@@ -2062,7 +2066,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_INFORMATION_LIST_LIST,
+       "Wyświetl informacje o systemie.")
+ MSG_HASH(MENU_ENUM_SUBLABEL_ONLINE_UPDATER,
+       "Pobierz dodatki, komponenty i treści do RetroArch.")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_SUBLABEL_SAMBA_ENABLE,
+       "Włącz lub wyłącz udostępnianie sieciowe folderów.")
+ MSG_HASH(MENU_ENUM_SUBLABEL_SERVICES_SETTINGS,
+@@ -2072,7 +2076,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_SHOW_HIDDEN_FILES,
+       "Pokaż ukryte pliki/katalogi w przeglądarce plików.")
+ MSG_HASH(MENU_ENUM_SUBLABEL_LATENCY_SETTINGS,
+       "Zmień ustawienia związane z wideo, dźwiękiem i opóźnieniem sygnału wejściowego.")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_SUBLABEL_SSH_ENABLE,
+       "Włącz lub wyłącz zdalny dostęp do wiersza poleceń.")
+ #endif
+@@ -4039,7 +4043,7 @@ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_HELP_SEND_DEBUG_INFO,
+     "Wyślij informacje o debugowaniu"
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_MENU_SHOW_QUIT_RETROARCH,
+     "Pokaż uruchom ponownie RetroArch"
+@@ -4154,7 +4158,7 @@ MSG_HASH(
+     MENU_ENUM_SUBLABEL_MENU_SAVESTATE_RESUME,
+     "Automatyczne zamykanie menu i wznawianie bieżącej zawartości po wybraniu „Zapisz stan” lub „Wczytaj stan” z Szybkiego menu. Wyłączenie tego może poprawić wydajność stanu zapisywania na bardzo wolnych urządzeniach."
+     )
+-   #ifdef HAVE_LAKKA
++   #if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_SUBLABEL_QUIT_RETROARCH,
+     "Uruchom ponownie program."
+@@ -4615,7 +4619,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_FPS_UPDATE_INTERVAL,
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_DELETE_PLAYLIST,
+     "Usuń listę odtwarzania"
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_LOCALAP_ENABLE,
+       "Punkt dostępu Wi-Fi")
+ MSG_HASH(MENU_ENUM_SUBLABEL_LOCALAP_ENABLE,
+diff --git a/intl/msg_hash_pt_br.h b/intl/msg_hash_pt_br.h
+index bcaefc0..45e8827 100644
+--- a/intl/msg_hash_pt_br.h
++++ b/intl/msg_hash_pt_br.h
+@@ -6,7 +6,7 @@
+ #pragma warning(disable:4566)
+ #endif
+ 
+-#ifdef HAVE_LAKKA_SWITCH
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_NIRCADA_SWITCH)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_SWITCH_GPU_PROFILE,
+     "Overclock da GPU"
+@@ -24,7 +24,7 @@ MSG_HASH(
+     "Aumenta ou diminui o brilho da tela do Switch"
+     )
+ #endif
+-#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX)
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX) || defined(HAVE_NIRCADA_SWITCH)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_SWITCH_CPU_PROFILE,
+     "Overclock da CPU"
+@@ -474,7 +474,7 @@ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_BLOCK_SRAM_OVERWRITE,
+     "Não Sobregravar a SRAM ao Carregar Estado de Jogo"
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_BLUETOOTH_ENABLE,
+     "Habilitar Bluetooth"
+@@ -1362,7 +1362,7 @@ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_INPUT_META_PAUSE_TOGGLE,
+     "Alternar pausa"
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_INPUT_META_QUIT_KEY,
+     "Reiniciar o RetroArch"
+@@ -1535,6 +1535,12 @@ MSG_HASH(
+     "Serviços"
+     )
+ #endif
++#ifdef HAVE_NIRCADA
++MSG_HASH(
++    MENU_ENUM_LABEL_VALUE_NIRCADA_SERVICES,
++    "Serviços"
++    )
++#endif
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_LANG_CHINESE_SIMPLIFIED,
+     "Chinês (Simplificado)"
+@@ -2419,7 +2425,7 @@ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_MIDI_SETTINGS,
+     "MIDI"
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_QUIT_RETROARCH,
+     "Reiniciar o RetroArch"
+@@ -2578,7 +2584,7 @@ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_CONTENT_INFO_LAST_PLAYED,
+     "Última Partida"
+     )
+-#ifdef HAVE_LAKKA_SWITCH
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_NIRCADA_SWITCH)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_REBOOT,
+     "Reiniciar (RCM)"
+@@ -2781,7 +2787,7 @@ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_RUN_MUSIC,
+     "Executar"
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_SAMBA_ENABLE,
+     "Habilitar SAMBA"
+@@ -2959,7 +2965,7 @@ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_SCREENSHOTS_IN_CONTENT_DIR_ENABLE,
+     "Salvar Capturas de Tela no Diretório de Conteúdo"
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_SSH_ENABLE,
+     "Habilitar SSH"
+@@ -3126,8 +3132,8 @@ MSG_HASH(
+     "Suporte a KMS/EGL"
+     )
+ MSG_HASH(
+-    MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_LAKKA_VERSION,
+-    "Versão Lakka"
++    MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_NIRCADA_VERSION,
++    "Versão NircadaOS"
+     )
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_LIBRETRODB_SUPPORT,
+@@ -3810,8 +3816,8 @@ MSG_HASH(
+     "Atualizar Shaders GLSL"
+     )
+ MSG_HASH(
+-    MENU_ENUM_LABEL_VALUE_UPDATE_LAKKA,
+-    "Atualizar Lakka"
++    MENU_ENUM_LABEL_VALUE_UPDATE_NIRCADA,
++    "Atualizar NircadaOS"
+     )
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_UPDATE_OVERLAYS,
+@@ -4485,7 +4491,7 @@ MSG_HASH(
+     MENU_ENUM_SUBLABEL_AUDIO_SETTINGS,
+     "Altera as configurações de saída de áudio."
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_SUBLABEL_BLUETOOTH_ENABLE,
+     "Habilita ou desabilita o bluetooth."
+@@ -4559,7 +4565,7 @@ MSG_HASH(
+     MENU_ENUM_SUBLABEL_ONLINE_UPDATER,
+     "Baixa complementos, componentes e conteúdo para o RetroArch."
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_SUBLABEL_SAMBA_ENABLE,
+     "Habilita ou desabilita o compartilhamento de pastas na rede."
+@@ -4573,7 +4579,7 @@ MSG_HASH(
+     MENU_ENUM_SUBLABEL_SHOW_HIDDEN_FILES,
+     "Exibe arquivos/diretórios ocultos no navegador de arquivos."
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_SUBLABEL_SSH_ENABLE,
+     "Habilita ou desabilita o acesso remoto à linha de comando."
+@@ -5849,7 +5855,7 @@ MSG_HASH(
+     MENU_ENUM_SUBLABEL_SYSTEM_INFORMATION,
+     "Exibe informações específicas do dispositivo."
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_SUBLABEL_QUIT_RETROARCH,
+     "Reinicia o programa."
+@@ -7111,7 +7117,7 @@ MSG_HASH(
+     MENU_ENUM_SUBLABEL_MENU_SHOW_HELP,
+     "Exibi ou oculta a opção 'Ajuda'."
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_MENU_SHOW_QUIT_RETROARCH,
+     "Exibir 'Sair do RetroArch'"
+@@ -9902,7 +9908,7 @@ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_DELETE_PLAYLIST,
+     "Excluir lista de reprodução"
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_LOCALAP_ENABLE,
+     "Ponto de Acesso Wi-Fi"
+diff --git a/intl/msg_hash_pt_pt.h b/intl/msg_hash_pt_pt.h
+index e8c9ab0..5a023da 100644
+--- a/intl/msg_hash_pt_pt.h
++++ b/intl/msg_hash_pt_pt.h
+@@ -370,7 +370,7 @@ MSG_HASH(
+       MENU_ENUM_LABEL_VALUE_BLOCK_SRAM_OVERWRITE,
+       "Não substituir o SaveRAM no carregamento do estado de gravação"
+       )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+       MENU_ENUM_LABEL_VALUE_BLUETOOTH_ENABLE,
+       "Ativar Bluetooth"
+@@ -869,6 +869,10 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_JOYPAD_DRIVER,
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_LAKKA_SERVICES,
+       "Serviços")
+ #endif
++#ifdef HAVE_NIRCADA
++MSG_HASH(MENU_ENUM_LABEL_VALUE_NIRCADA_SERVICES,
++      "Serviços")
++#endif
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_LANG_CHINESE_SIMPLIFIED,
+       "Chinês (Simplificado)")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_LANG_CHINESE_TRADITIONAL,
+@@ -1237,7 +1241,7 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_RDB_ENTRY_START_CONTENT,
+       "Iniciar conteúdo")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_RDB_ENTRY_TGDB_RATING,
+       "Classificação TGDB")
+-#ifdef HAVE_LAKKA_SWITCH
++#if defined(HAVE_LAKKA)_SWITCH || defined(HAVE_NIRCADA_SWITCH)
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_REBOOT,
+       "Reinicializar (RCM)")
+ #else
+@@ -1302,7 +1306,7 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_RIGHT_ANALOG,
+       "Analógico direito")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_RUN,
+       "Executar")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_SAMBA_ENABLE,
+       "Ativar SAMBA")
+ #endif
+@@ -1374,7 +1378,7 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_SORT_SAVEFILES_ENABLE,
+       "Ordenação de gravação em pastas")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_SORT_SAVESTATES_ENABLE,
+       "Ordenação de gravação de estado em pastas")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_SSH_ENABLE,
+       "Ativar SSH")
+ #endif
+@@ -1584,8 +1588,8 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_DATABASES,
+       "Atualizar base de dados")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_GLSL_SHADERS,
+       "Atualizar shaders de GLSL")
+-MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_LAKKA,
+-      "Atualizar Lakka")
++MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_NIRCADA,
++      "Atualizar NircadaOS")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_OVERLAYS,
+       "Atualizar overlays")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_SLANG_SHADERS,
+@@ -1844,7 +1848,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_ADD_CONTENT_LIST,
+       "Procurar por conteúdo e adicionar à base de dados.")
+ MSG_HASH(MENU_ENUM_SUBLABEL_AUDIO_SETTINGS,
+       "Modificar as definições de saída de som.")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_SUBLABEL_BLUETOOTH_ENABLE,
+       "Ativar/desativar Bluetooth.")
+ #endif
+@@ -1876,7 +1880,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_INFORMATION_LIST_LIST,
+       "Mostrar informações do núcleo, rede e sistema.")
+ MSG_HASH(MENU_ENUM_SUBLABEL_ONLINE_UPDATER,
+       "Transferir complementos, componentes e conteúdos para o RetroArch.")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_SUBLABEL_SAMBA_ENABLE,
+       "Ativar/desativar partilha de pastas na rede.")
+ MSG_HASH(MENU_ENUM_SUBLABEL_SERVICES_SETTINGS,
+@@ -1884,7 +1888,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_SERVICES_SETTINGS,
+ #endif
+ MSG_HASH(MENU_ENUM_SUBLABEL_SHOW_HIDDEN_FILES,
+       "Mostrar ficheiros/pastas escondidos no explorador de ficheiros.")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_SUBLABEL_SSH_ENABLE,
+       "Ativar/desativar acesso remoto pela linha de comandos.")
+ #endif
+@@ -3840,7 +3844,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_MENU_WIDGETS_ENABLE,
+       "Use modern decorated animations, notifications, indicators and controls instead of the old text only system.")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_DELETE_PLAYLIST,
+       "Apagar a lista de reprodução")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_LOCALAP_ENABLE,
+       "Wi-Fi Access Point")
+ MSG_HASH(MENU_ENUM_SUBLABEL_LOCALAP_ENABLE,
+diff --git a/intl/msg_hash_ru.h b/intl/msg_hash_ru.h
+index 0ddd9da..2b43f85 100644
+--- a/intl/msg_hash_ru.h
++++ b/intl/msg_hash_ru.h
+@@ -378,7 +378,7 @@ MSG_HASH(
+       MENU_ENUM_LABEL_VALUE_BLOCK_SRAM_OVERWRITE,
+       "Не перезаписывать SaveRAM при загрузке сохранений"
+       )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+       MENU_ENUM_LABEL_VALUE_BLUETOOTH_ENABLE,
+       "Включить Bluetooth"
+@@ -861,6 +861,10 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_JOYPAD_DRIVER,
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_LAKKA_SERVICES,
+       "Сервисы")
+ #endif
++#ifdef HAVE_NIRCADA
++MSG_HASH(MENU_ENUM_LABEL_VALUE_NIRCADA_SERVICES,
++      "Сервисы")
++#endif
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_LANG_CHINESE_SIMPLIFIED,
+       "Китайский (Простой)")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_LANG_CHINESE_TRADITIONAL,
+@@ -1195,7 +1199,7 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_RDB_ENTRY_START_CONTENT,
+       "Запустить игру")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_RDB_ENTRY_TGDB_RATING,
+       "Рейтинг TGDB")
+-#ifdef HAVE_LAKKA_SWITCH
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_REBOOT,
+       "Перезагрузка (RCM)")
+ #else
+@@ -1262,7 +1266,7 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_RUN,
+       "Запустить")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_RUN_MUSIC,
+       "Запустить")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_SAMBA_ENABLE,
+       "Включить SAMBA")
+ #endif
+@@ -1334,7 +1338,7 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_SORT_SAVEFILES_ENABLE,
+       "Сохранить сортировку в папках")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_SORT_SAVESTATES_ENABLE,
+       "Сортировать сохранения в папках")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_SSH_ENABLE,
+       "SSH включён")
+ #endif
+@@ -1416,8 +1420,8 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_JACK_SUPPORT,
+       "Поддержка JACK")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_KMS_SUPPORT,
+       "поддержка KMS/EGL")
+-MSG_HASH(MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_LAKKA_VERSION,
+-      "Версия Lakka")
++MSG_HASH(MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_NIRCADA_VERSION,
++      "Версия NircadaOS")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_LIBRETRODB_SUPPORT,
+       "Поддержка LibretroDB")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_LIBUSB_SUPPORT,
+@@ -1548,8 +1552,8 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_DATABASES,
+       "Обновить базы данных")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_GLSL_SHADERS,
+       "Обновить GLSL шейдеры")
+-MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_LAKKA,
+-      "Обновить Lakka")
++MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_NIRCADA,
++      "Обновить NircadaOS")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_OVERLAYS,
+       "Обновить оверлеи")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_SLANG_SHADERS,
+@@ -1800,7 +1804,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_ADD_CONTENT_LIST,
+       "Сканировать содержимое и добавить в базу данных.")
+ MSG_HASH(MENU_ENUM_SUBLABEL_AUDIO_SETTINGS,
+       "Настройка параметров аудиовыхода.")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_SUBLABEL_BLUETOOTH_ENABLE,
+       "Включить или отключить Bluetooth.")
+ #endif
+@@ -1832,7 +1836,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_INFORMATION_LIST_LIST,
+       "Показать информацию о ядре, сети и системе.")
+ MSG_HASH(MENU_ENUM_SUBLABEL_ONLINE_UPDATER,
+       "Загрузите надстройки, компоненты и содержимое для RetroArch.")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_SUBLABEL_SAMBA_ENABLE,
+       "Включить или отключить сетевой доступ к папкам.")
+ MSG_HASH(MENU_ENUM_SUBLABEL_SERVICES_SETTINGS,
+@@ -1840,7 +1844,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_SERVICES_SETTINGS,
+ #endif
+ MSG_HASH(MENU_ENUM_SUBLABEL_SHOW_HIDDEN_FILES,
+       "Показывать скрытые файлы/каталоги внутри файлового менеджера.")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_SUBLABEL_SSH_ENABLE,
+       "Включить или отключить удаленный доступ к командной строке.")
+ #endif
+diff --git a/intl/msg_hash_tr.h b/intl/msg_hash_tr.h
+index 9d5cf21..1f6177c 100644
+--- a/intl/msg_hash_tr.h
++++ b/intl/msg_hash_tr.h
+@@ -6,7 +6,7 @@
+ #pragma warning(disable:4566)
+ #endif
+ 
+-#ifdef HAVE_LAKKA_SWITCH
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_NIRCADA_SWITCH)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_SWITCH_GPU_PROFILE,
+     "GPU Hız aşırtma"
+@@ -24,7 +24,7 @@ MSG_HASH(
+     "Switch'in ekran parlaklığını arttırın veya azaltın"
+     )
+ #endif
+-#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX)
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX) || defined(HAVE_NIRCADA_SWITCH)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_SWITCH_CPU_PROFILE,
+     "İşlemci Hızaşırtma"
+@@ -473,7 +473,7 @@ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_BLOCK_SRAM_OVERWRITE,
+     "Savestate'i yüklerken SaveRAM'in üzerine yazma"
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_BLUETOOTH_ENABLE,
+     "Bluetooth"
+@@ -1339,7 +1339,7 @@ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_INPUT_META_PAUSE_TOGGLE,
+     "Pause açma-kapama"
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_INPUT_META_QUIT_KEY,
+     "RetroArch'ı yeniden başlat"
+@@ -1511,6 +1511,12 @@ MSG_HASH(
+     "Servisler"
+     )
+ #endif
++#ifdef HAVE_NIRCADA
++MSG_HASH(
++    MENU_ENUM_LABEL_VALUE_NIRCADA_SERVICES,
++    "Servisler"
++    )
++#endif
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_LANG_CHINESE_SIMPLIFIED,
+     "Çince (Basitleştirilmiş)"
+@@ -2241,7 +2247,7 @@ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_MIDI_SETTINGS,
+     "MIDI"
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_QUIT_RETROARCH,
+     "RetroArch'ı Yeniden Başlat"
+@@ -2368,7 +2374,7 @@ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_RDB_ENTRY_TGDB_RATING,
+     "TGDB Değerlendirmesi"
+     )
+-#ifdef HAVE_LAKKA_SWITCH
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_REBOOT,
+     "RCM'ye yeniden başlat"
+@@ -2595,7 +2601,7 @@ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_RUN_MUSIC,
+     "Başlat"
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_SAMBA_ENABLE,
+     "SAMBA"
+@@ -2773,7 +2779,7 @@ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_SCREENSHOTS_IN_CONTENT_DIR_ENABLE,
+     "Ekran görüntülerini içerik dizinine yaz"
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_SSH_ENABLE,
+     "SSH"
+@@ -2936,8 +2942,8 @@ MSG_HASH(
+     "KMS/EGL Desteği"
+     )
+ MSG_HASH(
+-    MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_LAKKA_VERSION,
+-    "Lakka Versiyonu"
++    MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_NIRCADA_VERSION,
++    "NircadaOS Versiyonu"
+     )
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_LIBRETRODB_SUPPORT,
+@@ -3572,7 +3578,7 @@ MSG_HASH(
+     "GLSL Gölgelendiricileri Güncelle"
+     )
+ MSG_HASH(
+-    MENU_ENUM_LABEL_VALUE_UPDATE_LAKKA,
++    MENU_ENUM_LABEL_VALUE_UPDATE_NIRCADA,
+     "Lakka'yı Güncelle"
+     )
+ MSG_HASH(
+@@ -4189,7 +4195,7 @@ MSG_HASH(
+     MENU_ENUM_SUBLABEL_AUDIO_SETTINGS,
+     "Ses çıkışı ayarlarını değiştirin."
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_SUBLABEL_BLUETOOTH_ENABLE,
+     "Bluetooth durumunu belirler."
+@@ -4263,7 +4269,7 @@ MSG_HASH(
+     MENU_ENUM_SUBLABEL_ONLINE_UPDATER,
+     "RetroArch için eklentiler, bileşenler ve içerikler indirin."
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_SUBLABEL_SAMBA_ENABLE,
+     "Ağ klasörlerini SMB protokolü ile paylaşın."
+@@ -4277,7 +4283,7 @@ MSG_HASH(
+     MENU_ENUM_SUBLABEL_SHOW_HIDDEN_FILES,
+     "Dosya tarayıcısının içindeki gizli dosyaları/dizinleri göster."
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_SUBLABEL_SSH_ENABLE,
+     "Uzaktan komut satırına erişmek için SSH kullanın."
+@@ -5525,7 +5531,7 @@ MSG_HASH(
+     MENU_ENUM_SUBLABEL_SYSTEM_INFORMATION,
+     "Aygıta özgü bilgileri gösterir."
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_SUBLABEL_QUIT_RETROARCH,
+     "Programı yeniden başlat."
+@@ -6741,7 +6747,7 @@ MSG_HASH(
+     MENU_ENUM_SUBLABEL_MENU_SHOW_HELP,
+     "'Yardım' seçeneğini göster/gizle."
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_MENU_SHOW_QUIT_RETROARCH,
+     "RetroArch'ı Yeniden Başlat'ı göster"
+@@ -9300,7 +9306,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_MENU_WIDGETS_ENABLE,
+       "Yalnızca eski metin sistemi yerine modern dekore edilmiş animasyonları, bildirimleri, göstergeleri ve kontrolleri kullanın.")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_DELETE_PLAYLIST,
+       "Parça listesini sil")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_LOCALAP_ENABLE,
+       "Wi-Fi Erişim Noktası")
+ MSG_HASH(MENU_ENUM_SUBLABEL_LOCALAP_ENABLE,
+diff --git a/intl/msg_hash_us.h b/intl/msg_hash_us.h
+index 3081630..90cb06a 100644
+--- a/intl/msg_hash_us.h
++++ b/intl/msg_hash_us.h
+@@ -1,4 +1,4 @@
+-#ifdef HAVE_LAKKA_SWITCH
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_NIRCADA_SWITCH)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_SWITCH_GPU_PROFILE,
+     "GPU Overclock"
+@@ -16,7 +16,7 @@ MSG_HASH(
+     "Increase or decrease the Switch screen brightness"
+     )
+ #endif
+-#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX)
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX) || defined(HAVE_NIRCADA_SWITCH)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_SWITCH_CPU_PROFILE,
+     "CPU Overclock"
+@@ -466,7 +466,7 @@ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_BLOCK_SRAM_OVERWRITE,
+     "Don't overwrite SaveRAM on loading savestate"
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKK) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_BLUETOOTH_ENABLE,
+     "Bluetooth"
+@@ -1442,7 +1442,7 @@ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_INPUT_META_PAUSE_TOGGLE,
+     "Pause toggle"
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_INPUT_META_QUIT_KEY,
+     "Restart RetroArch"
+@@ -1623,6 +1623,12 @@ MSG_HASH(
+     "Services"
+     )
+ #endif
++#ifdef HAVE_NIRCADA
++MSG_HASH(
++    MENU_ENUM_LABEL_VALUE_NIRCADA_SERVICES,
++    "Services"
++    )
++#endif
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_LANG_CHINESE_SIMPLIFIED,
+     "Chinese (Simplified)"
+@@ -2543,7 +2549,7 @@ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_MIDI_SETTINGS,
+     "MIDI"
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA) 
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_QUIT_RETROARCH,
+     "Restart RetroArch"
+@@ -2702,7 +2708,7 @@ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_CONTENT_INFO_LAST_PLAYED,
+     "Last Played"
+     )
+-#ifdef HAVE_LAKKA_SWITCH
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_NIRCADA_SWITCH)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_REBOOT,
+     "Reboot into RCM"
+@@ -2905,7 +2911,7 @@ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_RUN_MUSIC,
+     "Run"
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_SAMBA_ENABLE,
+     "SAMBA"
+@@ -3083,7 +3089,7 @@ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_SCREENSHOTS_IN_CONTENT_DIR_ENABLE,
+     "Write Screenshots to Content Dir"
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_SSH_ENABLE,
+     "SSH"
+@@ -3250,8 +3256,8 @@ MSG_HASH(
+     "KMS/EGL support"
+     )
+ MSG_HASH(
+-    MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_LAKKA_VERSION,
+-    "Lakka Version"
++    MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_NIRCADA_VERSION,
++    "NircadaOS Version"
+     )
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_LIBRETRODB_SUPPORT,
+@@ -3946,8 +3952,8 @@ MSG_HASH(
+     "Update GLSL Shaders"
+     )
+ MSG_HASH(
+-    MENU_ENUM_LABEL_VALUE_UPDATE_LAKKA,
+-    "Update Lakka"
++    MENU_ENUM_LABEL_VALUE_UPDATE_NIRCADA,
++    "Update NircadaOS"
+     )
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_UPDATE_OVERLAYS,
+@@ -4621,7 +4627,7 @@ MSG_HASH(
+     MENU_ENUM_SUBLABEL_AUDIO_SETTINGS,
+     "Change audio output settings."
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_SUBLABEL_BLUETOOTH_ENABLE,
+     "Determines the state of Bluetooth."
+@@ -4695,7 +4701,7 @@ MSG_HASH(
+     MENU_ENUM_SUBLABEL_ONLINE_UPDATER,
+     "Download add-ons, components, and content for RetroArch."
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_SUBLABEL_SAMBA_ENABLE,
+     "Share network folders through the SMB protocol."
+@@ -4709,7 +4715,7 @@ MSG_HASH(
+     MENU_ENUM_SUBLABEL_SHOW_HIDDEN_FILES,
+     "Show hidden files/directories inside the file browser."
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_SUBLABEL_SSH_ENABLE,
+     "Use SSH to access the command line remotely."
+@@ -5993,7 +5999,7 @@ MSG_HASH(
+     MENU_ENUM_SUBLABEL_SYSTEM_INFORMATION,
+     "Show information specific to the device."
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_SUBLABEL_QUIT_RETROARCH,
+     "Restart the program."
+@@ -7291,7 +7297,7 @@ MSG_HASH(
+     MENU_ENUM_SUBLABEL_MENU_SHOW_HELP,
+     "Show/hide the 'Help' option."
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_MENU_SHOW_QUIT_RETROARCH,
+     "Show Restart RetroArch"
+@@ -10114,7 +10120,7 @@ MSG_HASH(
+     MENU_ENUM_SUBLABEL_DELETE_PLAYLIST,
+     "Remove playlist from filesystem."
+     )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_LOCALAP_ENABLE,
+     "Wi-Fi Access Point"
+diff --git a/intl/msg_hash_vn.h b/intl/msg_hash_vn.h
+index 4bc91ab..74117c0 100644
+--- a/intl/msg_hash_vn.h
++++ b/intl/msg_hash_vn.h
+@@ -242,7 +242,7 @@ MSG_HASH(
+       MENU_ENUM_LABEL_VALUE_BLOCK_SRAM_OVERWRITE,
+       "Khi tải savestate đừng ghi đè SaveRAM"
+       )
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(
+       MENU_ENUM_LABEL_VALUE_BLUETOOTH_ENABLE,
+       "Kích hoạt Bluetooth"
+@@ -519,7 +519,7 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_OVERLAY_AUTOLOAD_PREFERRED,
+       "Tự động tải Preferred Overlay")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_PLAYLIST_DIRECTORY,
+       "Playlists Danh mục")
+-#ifdef HAVE_LAKKA_SWITCH
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_NIRCADA_SWITCH)
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_REBOOT,
+       "Khởi động lại (RCM)")
+ #else
+@@ -534,7 +534,7 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_REWIND_ENABLE,
+       "Kích hoạt Rewind")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_RGUI_CONFIG_DIRECTORY,
+       "Config Danh mục")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_SAMBA_ENABLE,
+       "Kích hoạt SAMBA")
+ #endif
+@@ -560,7 +560,7 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_SHOW_HIDDEN_FILES,
+       "Show Hidden Files and Folders")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_SHUTDOWN,
+       "Tắt Máy")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_SSH_ENABLE,
+       "Kích hoạt SSH")
+ #endif
+@@ -586,8 +586,8 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_DATABASES,
+       "Cập nhật Databases")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_GLSL_SHADERS,
+       "Cập nhật GLSL Shaders")
+-MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_LAKKA,
+-      "Cập nhật Lakka")
++MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_NIRCADA,
++      "Cập nhật NircadaOS")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_OVERLAYS,
+       "Cập nhật Overlays")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_SLANG_SHADERS,
+@@ -618,7 +618,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_ADD_CONTENT_LIST,
+       "Tải/quét nội dung và thêm vào bộ sưu tập.")
+ MSG_HASH(MENU_ENUM_SUBLABEL_AUDIO_SETTINGS,
+       "Điều chỉnh thiết lập cho âm thanh ra.")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_SUBLABEL_BLUETOOTH_ENABLE,
+       "Bật/tắt bluetooth.")
+ #endif
+@@ -642,7 +642,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_NETPLAY,
+       "Tham gia hoặc làm máy chủ cho netplay.")
+ MSG_HASH(MENU_ENUM_SUBLABEL_ONLINE_UPDATER,
+       "Tải/cập nhật tiện ích và thành phần của RetroArch.")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_SUBLABEL_SAMBA_ENABLE,
+       "Bật/tắt chia sẻ thư mục trên mạng.")
+ MSG_HASH(MENU_ENUM_SUBLABEL_SERVICES_SETTINGS,
+@@ -650,7 +650,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_SERVICES_SETTINGS,
+ #endif
+ MSG_HASH(MENU_ENUM_SUBLABEL_SHOW_HIDDEN_FILES,
+       "Hiện ra tập tin và thư mục ẩn trong trình duyệt tập tin.")
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ MSG_HASH(MENU_ENUM_SUBLABEL_SSH_ENABLE,
+       "Bật/tắt giao thức SSH.")
+ #endif
+diff --git a/menu/cbs/menu_cbs_deferred_push.c b/menu/cbs/menu_cbs_deferred_push.c
+index d7e282e..a53d12d 100644
+--- a/menu/cbs/menu_cbs_deferred_push.c
++++ b/menu/cbs/menu_cbs_deferred_push.c
+@@ -184,7 +184,7 @@ generic_deferred_push(deferred_push_wifi_settings_list,             DISPLAYLIST_
+ generic_deferred_push(deferred_push_network_settings_list,          DISPLAYLIST_NETWORK_SETTINGS_LIST)
+ generic_deferred_push(deferred_push_subsystem_settings_list,          DISPLAYLIST_SUBSYSTEM_SETTINGS_LIST)
+ generic_deferred_push(deferred_push_network_hosting_settings_list,          DISPLAYLIST_NETWORK_HOSTING_SETTINGS_LIST)
+-generic_deferred_push(deferred_push_lakka_services_list,            DISPLAYLIST_LAKKA_SERVICES_LIST)
++generic_deferred_push(deferred_push_nircada_services_list,            DISPLAYLIST_NIRCADA_SERVICES_LIST)
+ generic_deferred_push(deferred_push_user_settings_list,             DISPLAYLIST_USER_SETTINGS_LIST)
+ generic_deferred_push(deferred_push_directory_settings_list,        DISPLAYLIST_DIRECTORY_SETTINGS_LIST)
+ generic_deferred_push(deferred_push_privacy_settings_list,          DISPLAYLIST_PRIVACY_SETTINGS_LIST)
+@@ -223,14 +223,14 @@ generic_deferred_push(deferred_push_core_updater_list,              DISPLAYLIST_
+ generic_deferred_push(deferred_push_core_content_list,              DISPLAYLIST_CORE_CONTENT)
+ generic_deferred_push(deferred_push_core_content_dirs_list,         DISPLAYLIST_CORE_CONTENT_DIRS)
+ generic_deferred_push(deferred_push_core_content_dirs_subdir_list,  DISPLAYLIST_CORE_CONTENT_DIRS_SUBDIR)
+-generic_deferred_push(deferred_push_lakka_list,                     DISPLAYLIST_LAKKA)
++generic_deferred_push(deferred_push_nircada_list,                     DISPLAYLIST_NIRCADA)
+ #endif
+ 
+-#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX)
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX) || defined(HAVE_NIRCADA_SWITCH)
+ generic_deferred_push(deferred_push_switch_cpu_profile,             DISPLAYLIST_SWITCH_CPU_PROFILE)
+ #endif
+ 
+-#ifdef HAVE_LAKKA_SWITCH
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_NIRCADA_SWITCH)
+ generic_deferred_push(deferred_push_switch_gpu_profile,             DISPLAYLIST_SWITCH_GPU_PROFILE)
+ generic_deferred_push(deferred_push_switch_backlight_control,       DISPLAYLIST_SWITCH_BACKLIGHT_CONTROL)
+ #endif
+@@ -724,7 +724,7 @@ static int menu_cbs_init_bind_deferred_push_compare_label(
+       {MENU_ENUM_LABEL_DEFERRED_SUBSYSTEM_SETTINGS_LIST, deferred_push_subsystem_settings_list},
+       {MENU_ENUM_LABEL_DEFERRED_NETWORK_HOSTING_SETTINGS_LIST, deferred_push_network_hosting_settings_list},
+       {MENU_ENUM_LABEL_DEFERRED_WIFI_SETTINGS_LIST, deferred_push_wifi_settings_list},
+-      {MENU_ENUM_LABEL_DEFERRED_LAKKA_SERVICES_LIST, deferred_push_lakka_services_list},
++      {MENU_ENUM_LABEL_DEFERRED_NIRCADA_SERVICES_LIST, deferred_push_nircada_services_list},
+       {MENU_ENUM_LABEL_DEFERRED_USER_SETTINGS_LIST, deferred_push_user_settings_list},
+       {MENU_ENUM_LABEL_DEFERRED_DIRECTORY_SETTINGS_LIST, deferred_push_directory_settings_list},
+       {MENU_ENUM_LABEL_DEFERRED_PRIVACY_SETTINGS_LIST, deferred_push_privacy_settings_list},
+@@ -766,11 +766,11 @@ static int menu_cbs_init_bind_deferred_push_compare_label(
+       {MENU_ENUM_LABEL_DEFERRED_AUDIO_RESAMPLER_SETTINGS_LIST, deferred_push_audio_resampler_settings_list},
+       {MENU_ENUM_LABEL_DEFERRED_AUDIO_MIXER_SETTINGS_LIST, deferred_push_audio_mixer_settings_list},
+       {MENU_ENUM_LABEL_DEFERRED_LATENCY_SETTINGS_LIST, deferred_push_latency_settings_list},
+-#ifdef HAVE_LAKKA_SWITCH
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_NIRCADA_SWITCH)
+       {MENU_ENUM_LABEL_SWITCH_GPU_PROFILE, deferred_push_switch_gpu_profile},
+       {MENU_ENUM_LABEL_SWITCH_BACKLIGHT_CONTROL, deferred_push_switch_backlight_control},
+ #endif
+-#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX)
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX) || defined(HAVE_NIRCADA_SWITCH)
+       {MENU_ENUM_LABEL_SWITCH_CPU_PROFILE, deferred_push_switch_cpu_profile},
+ #endif
+       {MENU_ENUM_LABEL_DEFERRED_REMAPPINGS_PORT_LIST, deferred_push_remappings_port },
+@@ -888,9 +888,9 @@ static int menu_cbs_init_bind_deferred_push_compare_label(
+             BIND_ACTION_DEFERRED_PUSH(cbs, deferred_push_pl_thumbnails_updater_list);
+ #endif
+             break;
+-         case MENU_ENUM_LABEL_DEFERRED_LAKKA_LIST:
++         case MENU_ENUM_LABEL_DEFERRED_NIRCADA_LIST:
+ #ifdef HAVE_NETWORKING
+-            BIND_ACTION_DEFERRED_PUSH(cbs, deferred_push_lakka_list);
++            BIND_ACTION_DEFERRED_PUSH(cbs, deferred_push_nircada_list);
+ #endif
+             break;
+          case MENU_ENUM_LABEL_LOAD_CONTENT_HISTORY:
+@@ -1217,9 +1217,9 @@ static int menu_cbs_init_bind_deferred_push_compare_label(
+          case MENU_LABEL_DEFERRED_ARCHIVE_OPEN:
+             BIND_ACTION_DEFERRED_PUSH(cbs, deferred_archive_open);
+             break;
+-         case MENU_LABEL_DEFERRED_LAKKA_LIST:
++         case MENU_LABEL_DEFERRED_NIRCADA_LIST:
+ #ifdef HAVE_NETWORKING
+-            BIND_ACTION_DEFERRED_PUSH(cbs, deferred_push_lakka_list);
++            BIND_ACTION_DEFERRED_PUSH(cbs, deferred_push_nircada_list);
+ #endif
+             break;
+          case MENU_LABEL_DATABASE_MANAGER_LIST:
+diff --git a/menu/cbs/menu_cbs_ok.c b/menu/cbs/menu_cbs_ok.c
+index 2486a83..961bfe3 100644
+--- a/menu/cbs/menu_cbs_ok.c
++++ b/menu/cbs/menu_cbs_ok.c
+@@ -73,6 +73,7 @@
+ #include "../../retroarch.h"
+ #include "../../verbosity.h"
+ #include "../../lakka.h"
++#include "../../nircada.h"
+ #include "../../wifi/wifi_driver.h"
+ #include "../../gfx/video_display_server.h"
+ #include "../../manual_content_scan.h"
+@@ -155,6 +156,23 @@ static char *lakka_get_project(void)
+    return lakka_project;
+ }
+ #endif
++#ifdef HAVE_NIRCADA
++static char *nircada_get_project(void)
++{
++   size_t len;
++   static char nircada_project[128];
++   FILE *command_file = popen("cat /etc/release | cut -d - -f 1", "r");
++
++   fgets(nircada_project, sizeof(nircada_project), command_file);
++   len = strlen(nircada_project);
++
++   if (len > 0 && nircada_project[len-1] == '\n')
++      nircada_project[--len] = '\0';
++
++   pclose(command_file);
++   return nircada_project;
++}
++#endif
+ #endif
+ 
+ #define action_ok_dl_lbl(a, b) \
+@@ -291,8 +309,8 @@ static enum msg_hash_enums action_ok_dl_to_enum(unsigned lbl)
+          return MENU_ENUM_LABEL_DEFERRED_NETPLAY;
+       case ACTION_OK_DL_NETPLAY_LAN_SCAN_SETTINGS_LIST:
+          return MENU_ENUM_LABEL_DEFERRED_NETPLAY_LAN_SCAN_SETTINGS_LIST;
+-      case ACTION_OK_DL_LAKKA_SERVICES_LIST:
+-         return MENU_ENUM_LABEL_DEFERRED_LAKKA_SERVICES_LIST;
++      case ACTION_OK_DL_NIRCADA_SERVICES_LIST:
++         return MENU_ENUM_LABEL_DEFERRED_NIRCADA_SERVICES_LIST;
+       case ACTION_OK_DL_USER_SETTINGS_LIST:
+          return MENU_ENUM_LABEL_DEFERRED_USER_SETTINGS_LIST;
+       case ACTION_OK_DL_DIRECTORY_SETTINGS_LIST:
+@@ -1003,12 +1021,12 @@ int generic_action_ok_displaylist_push(const char *path,
+          info.enum_idx      = MENU_ENUM_LABEL_DEFERRED_CORE_CONTENT_LIST;
+          dl_type            = DISPLAYLIST_PENDING_CLEAR;
+          break;
+-      case ACTION_OK_DL_LAKKA_LIST:
++      case ACTION_OK_DL_NIRCADA_LIST:
+          info.type          = type;
+          info.directory_ptr = idx;
+          info_path          = path;
+-         info_label         = msg_hash_to_str(MENU_ENUM_LABEL_DEFERRED_LAKKA_LIST);
+-         info.enum_idx      = MENU_ENUM_LABEL_DEFERRED_LAKKA_LIST;
++         info_label         = msg_hash_to_str(MENU_ENUM_LABEL_DEFERRED_NIRCADA_LIST);
++         info.enum_idx      = MENU_ENUM_LABEL_DEFERRED_NIRCADA_LIST;
+          dl_type            = DISPLAYLIST_PENDING_CLEAR;
+          break;
+ 
+@@ -1133,7 +1151,7 @@ int generic_action_ok_displaylist_push(const char *path,
+       case ACTION_OK_DL_WIFI_SETTINGS_LIST:
+       case ACTION_OK_DL_NETPLAY:
+       case ACTION_OK_DL_NETPLAY_LAN_SCAN_SETTINGS_LIST:
+-      case ACTION_OK_DL_LAKKA_SERVICES_LIST:
++      case ACTION_OK_DL_NIRCADA_SERVICES_LIST:
+       case ACTION_OK_DL_USER_SETTINGS_LIST:
+       case ACTION_OK_DL_DIRECTORY_SETTINGS_LIST:
+       case ACTION_OK_DL_PRIVACY_SETTINGS_LIST:
+@@ -3249,14 +3267,14 @@ static int action_ok_deferred_list_stub(const char *path,
+    return 0;
+ }
+ 
+-#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX)
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX) || defined(HAVE_NIRCADA_SWITCH)
+ static int action_ok_set_switch_cpu_profile(const char *path,
+       const char *label, unsigned type, size_t idx, size_t entry_idx)
+ {
+    char* profile_name = SWITCH_CPU_PROFILES[entry_idx];
+    char command[PATH_MAX_LENGTH] = {0};
+ 
+-#ifdef HAVE_LAKKA_SWITCH
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_NIRCADA_SWITCH)
+    snprintf(command, sizeof(command), "cpu-profile set '%s'", profile_name);
+ 
+    system(command);
+@@ -3283,7 +3301,7 @@ static int action_ok_set_switch_cpu_profile(const char *path,
+ }
+ #endif
+ 
+-#ifdef HAVE_LAKKA_SWITCH
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_NIRCADA_SWITCH)
+ 
+ static int action_ok_set_switch_gpu_profile(const char *path,
+       const char *label, unsigned type, size_t idx, size_t entry_idx)
+@@ -3978,6 +3996,20 @@ static int generic_action_ok_network(const char *path,
+          type_id2  = ACTION_OK_DL_LAKKA_LIST;
+          callback  = cb_net_generic;
+          break;
++#endif
++#ifdef HAVE_NIRCADA
++      case MENU_ENUM_LABEL_CB_NIRCADA_LIST:
++         /* TODO unhardcode this path */
++         fill_pathname_join(url_path,
++               file_path_str(FILE_PATH_NIRCADA_URL),
++               nircada_get_project(), sizeof(url_path));
++         fill_pathname_join(url_path, url_path,
++               ".index",
++               sizeof(url_path));
++         url_label = msg_hash_to_str(enum_idx);
++         type_id2  = ACTION_OK_DL_NIRCADA_LIST;
++         callback  = cb_net_generic;
++         break;
+ #endif
+       default:
+          break;
+@@ -4006,7 +4038,7 @@ static int (funcname)(const char *path, const char *label, unsigned type, size_t
+ default_action_ok_list(action_ok_core_content_list, MENU_ENUM_LABEL_CB_CORE_CONTENT_LIST)
+ default_action_ok_list(action_ok_core_content_dirs_list, MENU_ENUM_LABEL_CB_CORE_CONTENT_DIRS_LIST)
+ default_action_ok_list(action_ok_thumbnails_updater_list, MENU_ENUM_LABEL_CB_THUMBNAILS_UPDATER_LIST)
+-default_action_ok_list(action_ok_lakka_list, MENU_ENUM_LABEL_CB_LAKKA_LIST)
++default_action_ok_list(action_ok_nircada_list, MENU_ENUM_LABEL_CB_NIRCADA_LIST)
+ 
+ static void cb_generic_dir_download(retro_task_t *task,
+       void *task_data,
+@@ -4101,8 +4133,8 @@ void cb_generic_download(retro_task_t *task,
+          }
+ #endif
+          break;
+-      case MENU_ENUM_LABEL_CB_LAKKA_DOWNLOAD:
+-         dir_path = LAKKA_UPDATE_DIR;
++      case MENU_ENUM_LABEL_CB_NIRCADA_DOWNLOAD:
++         dir_path = NIRCADA_UPDATE_DIR;
+          break;
+       case MENU_ENUM_LABEL_CB_DISCORD_AVATAR:
+       {
+@@ -4240,11 +4272,16 @@ static int action_ok_download_generic(const char *path,
+             string_list_free(str_list);
+          }
+          break;
+-      case MENU_ENUM_LABEL_CB_LAKKA_DOWNLOAD:
++      case MENU_ENUM_LABEL_CB_NIRCADA_DOWNLOAD:
+ #ifdef HAVE_LAKKA
+          /* TODO unhardcode this path*/
+          fill_pathname_join(s, file_path_str(FILE_PATH_LAKKA_URL),
+                lakka_get_project(), sizeof(s));
++#endif
++#ifdef HAVE_NIRCADA
++         /* TODO unhardcode this path*/
++         fill_pathname_join(s, file_path_str(FILE_PATH_NIRCADA_URL),
++               nircada_get_project(), sizeof(s));
+ #endif
+          break;
+       case MENU_ENUM_LABEL_CB_UPDATE_ASSETS:
+@@ -4439,7 +4476,7 @@ static int (funcname)(const char *path, const char *label, unsigned type, size_t
+ default_action_ok_download(action_ok_core_content_thumbnails, MENU_ENUM_LABEL_CB_CORE_THUMBNAILS_DOWNLOAD)
+ default_action_ok_download(action_ok_thumbnails_updater_download, MENU_ENUM_LABEL_CB_THUMBNAILS_UPDATER_DOWNLOAD)
+ default_action_ok_download(action_ok_download_url, MENU_ENUM_LABEL_CB_DOWNLOAD_URL)
+-default_action_ok_download(action_ok_lakka_download, MENU_ENUM_LABEL_CB_LAKKA_DOWNLOAD)
++default_action_ok_download(action_ok_nircada_download, MENU_ENUM_LABEL_CB_NIRCADA_DOWNLOAD)
+ default_action_ok_download(action_ok_update_assets, MENU_ENUM_LABEL_CB_UPDATE_ASSETS)
+ default_action_ok_download(action_ok_update_core_info_files, MENU_ENUM_LABEL_CB_UPDATE_CORE_INFO_FILES)
+ default_action_ok_download(action_ok_update_overlays, MENU_ENUM_LABEL_CB_UPDATE_OVERLAYS)
+@@ -4939,7 +4976,7 @@ default_action_ok_func(action_ok_user_interface_list, ACTION_OK_DL_USER_INTERFAC
+ default_action_ok_func(action_ok_menu_file_browser_list, ACTION_OK_DL_MENU_FILE_BROWSER_SETTINGS_LIST)
+ default_action_ok_func(action_ok_retro_achievements_list, ACTION_OK_DL_RETRO_ACHIEVEMENTS_SETTINGS_LIST)
+ default_action_ok_func(action_ok_updater_list, ACTION_OK_DL_UPDATER_SETTINGS_LIST)
+-default_action_ok_func(action_ok_lakka_services, ACTION_OK_DL_LAKKA_SERVICES_LIST)
++default_action_ok_func(action_ok_nircada_services, ACTION_OK_DL_NIRCADA_SERVICES_LIST)
+ default_action_ok_func(action_ok_user_list, ACTION_OK_DL_USER_SETTINGS_LIST)
+ default_action_ok_func(action_ok_netplay_sublist, ACTION_OK_DL_NETPLAY)
+ default_action_ok_func(action_ok_directory_list, ACTION_OK_DL_DIRECTORY_SETTINGS_LIST)
+@@ -6714,8 +6751,8 @@ static int menu_cbs_init_bind_ok_compare_label(menu_file_list_cbs_t *cbs,
+          case MENU_ENUM_LABEL_DOWNLOAD_PL_ENTRY_THUMBNAILS:
+             BIND_ACTION_OK(cbs, action_ok_pl_entry_content_thumbnails);
+             break;
+-         case MENU_ENUM_LABEL_UPDATE_LAKKA:
+-            BIND_ACTION_OK(cbs, action_ok_lakka_list);
++         case MENU_ENUM_LABEL_UPDATE_NIRCADA:
++            BIND_ACTION_OK(cbs, action_ok_nircada_list);
+             break;
+ #endif
+          case MENU_ENUM_LABEL_VIDEO_SHADER_PARAMETERS:
+@@ -6852,11 +6889,11 @@ static int menu_cbs_init_bind_ok_compare_label(menu_file_list_cbs_t *cbs,
+          case MENU_ENUM_LABEL_INFORMATION_LIST:
+          case MENU_ENUM_LABEL_INFORMATION:
+          case MENU_ENUM_LABEL_CONTENT_SETTINGS:
+-#ifdef HAVE_LAKKA_SWITCH
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_NIRCADA_SWITCH)
+          case MENU_ENUM_LABEL_SWITCH_GPU_PROFILE:
+          case MENU_ENUM_LABEL_SWITCH_BACKLIGHT_CONTROL:
+ #endif
+-#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX)
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX) || defined(HAVE_NIRCADA_SWITCH)
+          case MENU_ENUM_LABEL_SWITCH_CPU_PROFILE:
+ #endif
+             BIND_ACTION_OK(cbs, action_ok_push_default);
+@@ -7086,8 +7123,8 @@ static int menu_cbs_init_bind_ok_compare_label(menu_file_list_cbs_t *cbs,
+          case MENU_ENUM_LABEL_CONNECT_NETPLAY_ROOM:
+             BIND_ACTION_OK(cbs, action_ok_netplay_connect_room);
+             break;
+-         case MENU_ENUM_LABEL_LAKKA_SERVICES:
+-            BIND_ACTION_OK(cbs, action_ok_lakka_services);
++         case MENU_ENUM_LABEL_NIRCADA_SERVICES:
++            BIND_ACTION_OK(cbs, action_ok_nircada_services);
+             break;
+          case MENU_ENUM_LABEL_NETPLAY_SETTINGS:
+             BIND_ACTION_OK(cbs, action_ok_netplay_sublist);
+@@ -7250,8 +7287,8 @@ static int menu_cbs_init_bind_ok_compare_label(menu_file_list_cbs_t *cbs,
+             BIND_ACTION_OK(cbs, action_ok_rgui_menu_theme_preset);
+             break;
+ #ifdef HAVE_NETWORKING
+-         case MENU_LABEL_UPDATE_LAKKA:
+-            BIND_ACTION_OK(cbs, action_ok_lakka_list);
++         case MENU_LABEL_UPDATE_NIRCADA:
++            BIND_ACTION_OK(cbs, action_ok_nircada_list);
+             break;
+ #endif
+          case MENU_LABEL_VIDEO_SHADER_PRESET_SAVE:
+@@ -7495,7 +7532,7 @@ static int menu_cbs_init_bind_ok_compare_type(menu_file_list_cbs_t *cbs,
+                BIND_ACTION_OK(cbs, action_ok_playlist_entry);
+             }
+             break;
+-#ifdef HAVE_LAKKA_SWITCH
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_NIRCADA_SWITCH)
+          case MENU_SET_SWITCH_GPU_PROFILE:
+             BIND_ACTION_OK(cbs, action_ok_set_switch_gpu_profile);
+             break;
+@@ -7503,7 +7540,7 @@ static int menu_cbs_init_bind_ok_compare_type(menu_file_list_cbs_t *cbs,
+             BIND_ACTION_OK(cbs, action_ok_set_switch_backlight);
+             break;
+ #endif
+-#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX)
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX) || defined(HAVE_NIRCADA_SWITCH)
+          case MENU_SET_SWITCH_CPU_PROFILE:
+             BIND_ACTION_OK(cbs, action_ok_set_switch_cpu_profile);
+             break;
+@@ -7657,8 +7694,8 @@ static int menu_cbs_init_bind_ok_compare_type(menu_file_list_cbs_t *cbs,
+          case FILE_TYPE_DOWNLOAD_THUMBNAIL:
+             BIND_ACTION_OK(cbs, action_ok_thumbnails_updater_download);
+             break;
+-         case FILE_TYPE_DOWNLOAD_LAKKA:
+-            BIND_ACTION_OK(cbs, action_ok_lakka_download);
++         case FILE_TYPE_DOWNLOAD_NIRCADA:
++            BIND_ACTION_OK(cbs, action_ok_nircada_download);
+             break;
+          case FILE_TYPE_DOWNLOAD_CORE_INFO:
+             break;
+diff --git a/menu/cbs/menu_cbs_sublabel.c b/menu/cbs/menu_cbs_sublabel.c
+index 8d2372a..d410005 100644
+--- a/menu/cbs/menu_cbs_sublabel.c
++++ b/menu/cbs/menu_cbs_sublabel.c
+@@ -196,7 +196,7 @@ default_sublabel_macro(action_bind_sublabel_latency_settings_list,         MENU_
+ default_sublabel_macro(action_bind_sublabel_wifi_settings_list,            MENU_ENUM_SUBLABEL_WIFI_SETTINGS)
+ default_sublabel_macro(action_bind_sublabel_netplay_lan_scan_settings_list,MENU_ENUM_SUBLABEL_NETPLAY_LAN_SCAN_SETTINGS)
+ default_sublabel_macro(action_bind_sublabel_help_list,                     MENU_ENUM_SUBLABEL_HELP_LIST)
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+ default_sublabel_macro(action_bind_sublabel_services_settings_list,        MENU_ENUM_SUBLABEL_SERVICES_SETTINGS)
+ default_sublabel_macro(action_bind_sublabel_ssh_enable,                    MENU_ENUM_SUBLABEL_SSH_ENABLE)
+ default_sublabel_macro(action_bind_sublabel_samba_enable,                  MENU_ENUM_SUBLABEL_SAMBA_ENABLE )
+@@ -590,7 +590,7 @@ default_sublabel_macro(action_bind_sublabel_menu_show_information,
+ default_sublabel_macro(action_bind_sublabel_menu_show_configurations,              MENU_ENUM_SUBLABEL_MENU_SHOW_CONFIGURATIONS)
+ default_sublabel_macro(action_bind_sublabel_menu_show_help,                        MENU_ENUM_SUBLABEL_MENU_SHOW_HELP)
+ default_sublabel_macro(action_bind_sublabel_menu_show_quit_retroarch,              MENU_ENUM_SUBLABEL_MENU_SHOW_QUIT_RETROARCH)
+-#ifndef HAVE_LAKKA
++#if !defined(HAVE_LAKKA) || !defined(HAVE_NIRCADA)
+ default_sublabel_macro(action_bind_sublabel_menu_show_restart_retroarch,           MENU_ENUM_SUBLABEL_MENU_SHOW_RESTART_RETROARCH)
+ #endif
+ default_sublabel_macro(action_bind_sublabel_menu_show_reboot,                      MENU_ENUM_SUBLABEL_MENU_SHOW_REBOOT)
+@@ -683,11 +683,11 @@ default_sublabel_macro(action_bind_sublabel_show_wimp,
+ #endif
+ default_sublabel_macro(action_bind_sublabel_discord_allow,                         MENU_ENUM_SUBLABEL_DISCORD_ALLOW)
+ 
+-#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX)
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX) || defined(HAVE_NIRCADA_SWITCH)
+ default_sublabel_macro(action_bind_sublabel_switch_cpu_profile,             MENU_ENUM_SUBLABEL_SWITCH_CPU_PROFILE)
+ #endif
+ 
+-#ifdef HAVE_LAKKA_SWITCH
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_NIRCADA_SWITCH)
+ default_sublabel_macro(action_bind_sublabel_switch_gpu_profile,             MENU_ENUM_SUBLABEL_SWITCH_GPU_PROFILE)
+ default_sublabel_macro(action_bind_sublabel_switch_backlight_control,       MENU_ENUM_SUBLABEL_SWITCH_BACKLIGHT_CONTROL)
+ #endif
+@@ -1695,7 +1695,7 @@ int menu_cbs_init_bind_sublabel(menu_file_list_cbs_t *cbs,
+          case MENU_ENUM_LABEL_MENU_SHOW_QUIT_RETROARCH:
+             BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_menu_show_quit_retroarch);
+             break;
+-#ifndef HAVE_LAKKA
++#if !defined(HAVE_LAKKA) || !defined(HAVE_NIRCADA)
+          case MENU_ENUM_LABEL_MENU_SHOW_RESTART_RETROARCH:
+             BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_menu_show_restart_retroarch);
+             break;
+@@ -2940,6 +2940,23 @@ int menu_cbs_init_bind_sublabel(menu_file_list_cbs_t *cbs,
+          case MENU_ENUM_LABEL_LOCALAP_ENABLE:
+             BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_localap_enable);
+             break;
++#endif
++#ifdef HAVE_NIRCADA
++         case MENU_ENUM_LABEL_NIRCADA_SERVICES:
++            BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_services_settings_list);
++            break;
++         case MENU_ENUM_LABEL_SSH_ENABLE:
++            BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_ssh_enable);
++            break;
++         case MENU_ENUM_LABEL_SAMBA_ENABLE:
++            BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_samba_enable);
++            break;
++         case MENU_ENUM_LABEL_BLUETOOTH_ENABLE:
++            BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_bluetooth_enable);
++            break;
++         case MENU_ENUM_LABEL_LOCALAP_ENABLE:
++            BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_localap_enable);
++            break;
+ #endif
+          case MENU_ENUM_LABEL_USER_LANGUAGE:
+             BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_user_language);
+@@ -3005,12 +3022,12 @@ int menu_cbs_init_bind_sublabel(menu_file_list_cbs_t *cbs,
+             BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_show_wimp);
+             break;
+ #endif
+-#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX)
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX) || defined(HAVE_NIRCADA_SWITCH)
+          case MENU_ENUM_LABEL_SWITCH_CPU_PROFILE:
+             BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_switch_cpu_profile);
+             break;
+ #endif
+-#ifdef HAVE_LAKKA_SWITCH
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_NIRCADA_SWITCH)
+          case MENU_ENUM_LABEL_SWITCH_GPU_PROFILE:
+             BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_switch_gpu_profile);
+             break;
+diff --git a/menu/cbs/menu_cbs_title.c b/menu/cbs/menu_cbs_title.c
+index 076cd8d..96b0a51 100644
+--- a/menu/cbs/menu_cbs_title.c
++++ b/menu/cbs/menu_cbs_title.c
+@@ -382,6 +382,9 @@ default_title_macro(action_get_netplay_lan_scan_settings_list,  MENU_ENUM_LABEL_
+ #ifdef HAVE_LAKKA
+ default_title_macro(action_get_lakka_services_list,             MENU_ENUM_LABEL_VALUE_LAKKA_SERVICES)
+ #endif
++#ifdef HAVE_NIRCADA
++default_title_macro(action_get_nircada_services_list,             MENU_ENUM_LABEL_VALUE_NIRCADA_SERVICES)
++#endif
+ default_title_macro(action_get_user_settings_list,              MENU_ENUM_LABEL_VALUE_USER_SETTINGS)
+ default_title_macro(action_get_directory_settings_list,         MENU_ENUM_LABEL_VALUE_DIRECTORY_SETTINGS)
+ default_title_macro(action_get_privacy_settings_list,           MENU_ENUM_LABEL_VALUE_PRIVACY_SETTINGS)
+@@ -478,11 +481,11 @@ default_title_copy_macro(action_get_title_video_shader_preset_save,MENU_ENUM_LAB
+ default_title_copy_macro(action_get_title_video_shader_preset_remove,MENU_ENUM_LABEL_VALUE_VIDEO_SHADER_PRESET_REMOVE)
+ default_title_copy_macro(action_get_title_video_shader_preset_save_list,MENU_ENUM_LABEL_VALUE_VIDEO_SHADER_PRESET_SAVE)
+ 
+-#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX)
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX) || defined(HAVE_NIRCADA_SWITCH)
+ default_title_macro(action_get_title_switch_cpu_profile,          MENU_ENUM_LABEL_VALUE_SWITCH_CPU_PROFILE)
+ #endif
+ 
+-#ifdef HAVE_LAKKA_SWITCH
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_NIRCADA_SWITCH)
+ default_title_macro(action_get_title_switch_gpu_profile,          MENU_ENUM_LABEL_VALUE_SWITCH_GPU_PROFILE)
+ default_title_macro(action_get_title_switch_backlight_control,    MENU_ENUM_LABEL_VALUE_SWITCH_BACKLIGHT_CONTROL)
+ #endif
+@@ -682,6 +685,9 @@ static int menu_cbs_init_bind_title_compare_label(menu_file_list_cbs_t *cbs,
+       {MENU_ENUM_LABEL_DEFERRED_NETPLAY_LAN_SCAN_SETTINGS_LIST,       action_get_netplay_lan_scan_settings_list},
+ #ifdef HAVE_LAKKA
+       {MENU_ENUM_LABEL_DEFERRED_LAKKA_SERVICES_LIST,                  action_get_lakka_services_list},
++#endif
++#ifdef HAVE_NIRCADA
++      {MENU_ENUM_LABEL_DEFERRED_NIRCADA_SERVICES_LIST,                  action_get_nircada_services_list},
+ #endif
+       {MENU_ENUM_LABEL_DEFERRED_USER_SETTINGS_LIST,                   action_get_user_settings_list},
+       {MENU_ENUM_LABEL_DEFERRED_DIRECTORY_SETTINGS_LIST,              action_get_directory_settings_list},
+@@ -1079,12 +1085,12 @@ static int menu_cbs_init_bind_title_compare_label(menu_file_list_cbs_t *cbs,
+          case MENU_ENUM_LABEL_LIBRETRO_INFO_PATH:
+             BIND_ACTION_GET_TITLE(cbs, action_get_title_core_info_directory);
+             break;
+-#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX)
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX) || defined(HAVE_NIRCADA_SWITCH
+          case MENU_ENUM_LABEL_SWITCH_CPU_PROFILE:
+             BIND_ACTION_GET_TITLE(cbs, action_get_title_switch_cpu_profile);
+             break;
+ #endif
+-#ifdef HAVE_LAKKA_SWITCH
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_NIRCADA_SWITCH)
+          case MENU_ENUM_LABEL_SWITCH_GPU_PROFILE:
+             BIND_ACTION_GET_TITLE(cbs, action_get_title_switch_gpu_profile);
+             break;
+@@ -1399,12 +1405,12 @@ static int menu_cbs_init_bind_title_compare_label(menu_file_list_cbs_t *cbs,
+          case MENU_LABEL_LIBRETRO_INFO_PATH:
+             BIND_ACTION_GET_TITLE(cbs, action_get_title_core_info_directory);
+             break;
+-#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX)
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX) || defined(HAVE_NIRCADA_SWITCH)
+          case MENU_ENUM_LABEL_SWITCH_CPU_PROFILE:
+             BIND_ACTION_GET_TITLE(cbs, action_get_title_switch_cpu_profile);
+             break;
+ #endif
+-#ifdef HAVE_LAKKA_SWITCH
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_NIRCADA_SWITCH)
+          case MENU_ENUM_LABEL_SWITCH_GPU_PROFILE:
+             BIND_ACTION_GET_TITLE(cbs, action_get_title_switch_gpu_profile);
+             break;
+diff --git a/menu/drivers/materialui.c b/menu/drivers/materialui.c
+index c4e4f2a..7c36235 100644
+--- a/menu/drivers/materialui.c
++++ b/menu/drivers/materialui.c
+@@ -6712,6 +6712,10 @@ static int materialui_list_push(void *data, void *userdata,
+             entry.enum_idx      = MENU_ENUM_LABEL_UPDATE_LAKKA;
+             menu_displaylist_setting(&entry);
+ #else
++#ifdef HAVE_NIRCADA
++            entry.enum_idx      = MENU_ENUM_LABEL_UPDATE_NIRCADA;
++            menu_displaylist_setting(&entry);
++#else
+ #ifdef HAVE_ONLINE_UPDATER
+             if (settings->bools.menu_show_online_updater)
+             {
+@@ -6719,6 +6723,7 @@ static int materialui_list_push(void *data, void *userdata,
+                menu_displaylist_setting(&entry);
+             }
+ #endif
++#endif
+ #endif
+ 
+             if (settings->bools.menu_content_show_netplay)
+@@ -6755,7 +6760,7 @@ static int materialui_list_push(void *data, void *userdata,
+             entry.enum_idx      = MENU_ENUM_LABEL_QUIT_RETROARCH;
+             menu_displaylist_setting(&entry);
+ #endif
+-#if defined(HAVE_LAKKA)
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+             if (settings->bools.menu_show_reboot)
+             {
+                entry.enum_idx      = MENU_ENUM_LABEL_REBOOT;
+@@ -7711,7 +7716,7 @@ static void materialui_list_insert(
+                   string_is_equal(label, msg_hash_to_str(MENU_ENUM_LABEL_WIFI_SETTINGS)) ||
+                   string_is_equal(label, msg_hash_to_str(MENU_ENUM_LABEL_NETWORK_SETTINGS)) ||
+                   string_is_equal(label, msg_hash_to_str(MENU_ENUM_LABEL_NETPLAY_LAN_SCAN_SETTINGS)) ||
+-                  string_is_equal(label, msg_hash_to_str(MENU_ENUM_LABEL_LAKKA_SERVICES)) ||
++                  string_is_equal(label, msg_hash_to_str(MENU_ENUM_LABEL_NIRCADA_SERVICES)) ||
+                   string_is_equal(label, msg_hash_to_str(MENU_ENUM_LABEL_PLAYLIST_SETTINGS)) ||
+                   string_is_equal(label, msg_hash_to_str(MENU_ENUM_LABEL_USER_SETTINGS)) ||
+                   string_is_equal(label, msg_hash_to_str(MENU_ENUM_LABEL_DIRECTORY_SETTINGS)) ||
+diff --git a/menu/drivers/ozone/ozone.c b/menu/drivers/ozone/ozone.c
+index 019fb4c..95dc5f5 100644
+--- a/menu/drivers/ozone/ozone.c
++++ b/menu/drivers/ozone/ozone.c
+@@ -897,12 +897,12 @@ static int ozone_list_push(void *data, void *userdata,
+                menu_displaylist_setting(&entry);
+             }
+ 
+-#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX)
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX) || defined(HAVE_NIRCADA_SWITCH)
+             entry.enum_idx      = MENU_ENUM_LABEL_SWITCH_CPU_PROFILE;
+             menu_displaylist_setting(&entry);
+ #endif
+ 
+-#ifdef HAVE_LAKKA_SWITCH
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_NIRCADA_SWITCH)
+             entry.enum_idx      = MENU_ENUM_LABEL_SWITCH_GPU_PROFILE;
+             menu_displaylist_setting(&entry);
+ 
+diff --git a/menu/drivers/ozone/ozone_texture.c b/menu/drivers/ozone/ozone_texture.c
+index 7bb6d28..8435150 100644
+--- a/menu/drivers/ozone/ozone_texture.c
++++ b/menu/drivers/ozone/ozone_texture.c
+@@ -126,7 +126,7 @@ menu_texture_item ozone_entries_icon_get_texture(ozone_handle_t *ozone,
+       case MENU_ENUM_LABEL_ONLINE_UPDATER:
+       case MENU_ENUM_LABEL_UPDATER_SETTINGS:
+             return ozone->icons_textures[OZONE_ENTRIES_ICONS_TEXTURE_UPDATER];
+-      case MENU_ENUM_LABEL_UPDATE_LAKKA:
++      case MENU_ENUM_LABEL_UPDATE_NIRCADA:
+             return ozone->icons_textures[OZONE_ENTRIES_ICONS_TEXTURE_MAIN_MENU];
+       case MENU_ENUM_LABEL_UPDATE_CHEATS:
+             return ozone->icons_textures[OZONE_ENTRIES_ICONS_TEXTURE_CHEAT_OPTIONS];
+@@ -231,10 +231,10 @@ menu_texture_item ozone_entries_icon_get_texture(ozone_handle_t *ozone,
+       case MENU_ENUM_LABEL_SHOW_WIMP:
+       case MENU_ENUM_LABEL_USER_INTERFACE_SETTINGS:
+             return ozone->icons_textures[OZONE_ENTRIES_ICONS_TEXTURE_UI];
+-#ifdef HAVE_LAKKA_SWITCH
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_NIRCADA_SWITCH)
+       case MENU_ENUM_LABEL_SWITCH_GPU_PROFILE:
+ #endif
+-#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX)
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX) || defined(HAVE_NIRCADA_SWITCH)
+       case MENU_ENUM_LABEL_SWITCH_CPU_PROFILE:
+             return ozone->icons_textures[OZONE_ENTRIES_ICONS_TEXTURE_POWER];
+ #endif
+@@ -386,7 +386,7 @@ menu_texture_item ozone_entries_icon_get_texture(ozone_handle_t *ozone,
+          return ozone->icons_textures[OZONE_ENTRIES_ICONS_TEXTURE_PAUSE];
+       case MENU_SETTING_GROUP:
+          return ozone->icons_textures[OZONE_ENTRIES_ICONS_TEXTURE_SETTING];
+-#ifdef HAVE_LAKKA_SWITCH
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_NIRCADA_SWITCH)
+       case MENU_SET_SWITCH_BRIGHTNESS:
+          return ozone->icons_textures[OZONE_ENTRIES_ICONS_TEXTURE_BRIGHTNESS];
+ #endif
+diff --git a/menu/drivers/xmb.c b/menu/drivers/xmb.c
+index 15da4b7..880630f 100644
+--- a/menu/drivers/xmb.c
++++ b/menu/drivers/xmb.c
+@@ -2415,7 +2415,7 @@ static uintptr_t xmb_icon_get_id(xmb_handle_t *xmb,
+       case MENU_ENUM_LABEL_ONLINE_UPDATER:
+       case MENU_ENUM_LABEL_UPDATER_SETTINGS:
+          return xmb->textures.list[XMB_TEXTURE_UPDATER];
+-      case MENU_ENUM_LABEL_UPDATE_LAKKA:
++      case MENU_ENUM_LABEL_UPDATE_NIRCADA:
+          return xmb->textures.list[XMB_TEXTURE_MAIN_MENU];
+       case MENU_ENUM_LABEL_UPDATE_CHEATS:
+          return xmb->textures.list[XMB_TEXTURE_CHEAT_OPTIONS];
+@@ -2519,10 +2519,10 @@ static uintptr_t xmb_icon_get_id(xmb_handle_t *xmb,
+       case MENU_ENUM_LABEL_SHOW_WIMP:
+       case MENU_ENUM_LABEL_USER_INTERFACE_SETTINGS:
+          return xmb->textures.list[XMB_TEXTURE_UI];
+-#ifdef HAVE_LAKKA_SWITCH
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_NIRCADA_SWITCH)
+       case MENU_ENUM_LABEL_SWITCH_GPU_PROFILE:
+ #endif
+-#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX)
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX) || defined(HAVE_NIRCADA_SWITCH)
+       case MENU_ENUM_LABEL_SWITCH_CPU_PROFILE:
+          return xmb->textures.list[XMB_TEXTURE_POWER];
+ #endif
+@@ -2665,7 +2665,7 @@ static uintptr_t xmb_icon_get_id(xmb_handle_t *xmb,
+          return xmb->textures.list[XMB_TEXTURE_RELOAD];
+       case MENU_SETTING_ACTION_PAUSE_ACHIEVEMENTS:
+          return xmb->textures.list[XMB_TEXTURE_PAUSE];
+-#ifdef HAVE_LAKKA_SWITCH
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_NIRCADA_SWITCH)
+       case MENU_SET_SWITCH_BRIGHTNESS:
+          return xmb->textures.list[XMB_TEXTURE_BRIGHTNESS];
+ #endif
+@@ -6253,12 +6253,12 @@ static int xmb_list_push(void *data, void *userdata,
+                menu_displaylist_setting(&entry);
+             }
+ 
+-#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX)
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX) || defined(HAVE_NIRCADA_SWITCH)
+             entry.enum_idx      = MENU_ENUM_LABEL_SWITCH_CPU_PROFILE;
+             menu_displaylist_setting(&entry);
+ #endif
+ 
+-#ifdef HAVE_LAKKA_SWITCH
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_NIRCADA_SWITCH)
+             entry.enum_idx      = MENU_ENUM_LABEL_SWITCH_GPU_PROFILE;
+             menu_displaylist_setting(&entry);
+ 
+diff --git a/menu/menu_cbs.h b/menu/menu_cbs.h
+index 6844771..c2cdf47 100644
+--- a/menu/menu_cbs.h
++++ b/menu/menu_cbs.h
+@@ -133,7 +133,7 @@ enum
+    ACTION_OK_DL_CHEAT_FILE_APPEND,
+    ACTION_OK_DL_CORE_LIST,
+    ACTION_OK_DL_SIDELOAD_CORE_LIST,
+-   ACTION_OK_DL_LAKKA_LIST,
++   ACTION_OK_DL_NIRCADA_LIST,
+    ACTION_OK_DL_CONFIGURATIONS_LIST,
+    ACTION_OK_DL_COMPRESSED_ARCHIVE_PUSH,
+    ACTION_OK_DL_COMPRESSED_ARCHIVE_PUSH_DETECT_CORE,
+@@ -177,7 +177,7 @@ enum
+    ACTION_OK_DL_SUBSYSTEM_SETTINGS_LIST,
+    ACTION_OK_DL_NETWORK_HOSTING_SETTINGS_LIST,
+    ACTION_OK_DL_NETPLAY_LAN_SCAN_SETTINGS_LIST,
+-   ACTION_OK_DL_LAKKA_SERVICES_LIST,
++   ACTION_OK_DL_NIRCADA_SERVICES_LIST,
+    ACTION_OK_DL_USER_SETTINGS_LIST,
+    ACTION_OK_DL_DIRECTORY_SETTINGS_LIST,
+    ACTION_OK_DL_PRIVACY_SETTINGS_LIST,
+diff --git a/menu/menu_displaylist.c b/menu/menu_displaylist.c
+index 940ea71..8cf6c16 100644
+--- a/menu/menu_displaylist.c
++++ b/menu/menu_displaylist.c
+@@ -53,6 +53,10 @@
+ #include "../../lakka.h"
+ #endif
+ 
++#ifdef HAVE_NIRCADA_SWITCH
++#include "../../nircada.h"
++#endif
++
+ #ifdef HAVE_LIBNX
+ #include <switch.h>
+ #include "../../switch_performance_profiles.h"
+@@ -560,6 +564,23 @@ static unsigned menu_displaylist_parse_system_info(file_list_t *list)
+       }
+ #endif
+ 
++#ifdef HAVE_NIRCADA
++      if (frontend->get_nircada_version)
++      {
++         frontend->get_nircada_version(tmp2, sizeof(tmp2));
++
++         fill_pathname_join_concat_noext(tmp,
++               msg_hash_to_str(MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_NIRCADA_VERSION),
++               ": ",
++               tmp2,
++               sizeof(tmp));
++         if (menu_entries_append_enum(list, tmp, "",
++               MENU_ENUM_LABEL_SYSTEM_INFO_ENTRY,
++               MENU_SETTINGS_CORE_INFO_NONE, 0, 0))
++            count++;
++      }
++#endif
++
+       if (frontend->get_name)
+       {
+          frontend->get_name(tmp2, sizeof(tmp2));
+@@ -1583,6 +1604,10 @@ static int menu_displaylist_parse_settings_internal_enum(
+ #ifdef HAVE_LAKKA
+       if (flags & SD_FLAG_LAKKA_ADVANCED)
+          goto end;
++#endif
++#ifdef HAVE_NIRCADA
++      if (flags & SD_FLAG_NIRCADA_ADVANCED)
++         goto end;
+ #endif
+    }
+ 
+@@ -1801,7 +1826,7 @@ static int menu_displaylist_parse_load_content_settings(
+ 
+    if (!rarch_ctl(RARCH_CTL_IS_DUMMY_CORE, NULL))
+    {
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+       bool show_advanced_settings    = settings->bools.menu_show_advanced_settings;
+ #endif
+       rarch_system_info_t *system    = runloop_get_system_info();
+@@ -6181,6 +6206,26 @@ unsigned menu_displaylist_build_list(file_list_t *list, enum menu_displaylist_ct
+             }
+          }
+          break;
++#endif
++#ifdef HAVE_NIRCADA
++      case DISPLAYLIST_NIRCADA_SERVICES_LIST:
++         {
++            menu_displaylist_build_info_t build_list[] = {
++               {MENU_ENUM_LABEL_SSH_ENABLE,                                            PARSE_ONLY_BOOL},
++               {MENU_ENUM_LABEL_SAMBA_ENABLE,                                          PARSE_ONLY_BOOL},
++               {MENU_ENUM_LABEL_BLUETOOTH_ENABLE,                                      PARSE_ONLY_BOOL},
++               {MENU_ENUM_LABEL_LOCALAP_ENABLE,                                        PARSE_ONLY_BOOL},
++            };
++
++            for (i = 0; i < ARRAY_SIZE(build_list); i++)
++            {
++               if (menu_displaylist_parse_settings_enum(list,
++                        build_list[i].enum_idx,  build_list[i].parse_type,
++                        false) == 0)
++                  count++;
++            }
++         }
++         break;
+ #endif
+       case DISPLAYLIST_MENU_VIEWS_SETTINGS_LIST:
+          {
+@@ -6589,7 +6634,7 @@ unsigned menu_displaylist_build_list(file_list_t *list, enum menu_displaylist_ct
+                {MENU_ENUM_LABEL_WIFI_SETTINGS,PARSE_ACTION, true},
+                {MENU_ENUM_LABEL_NETWORK_SETTINGS,PARSE_ACTION, true},
+                {MENU_ENUM_LABEL_NETPLAY_LAN_SCAN_SETTINGS,PARSE_ACTION, true},
+-               {MENU_ENUM_LABEL_LAKKA_SERVICES,PARSE_ACTION, true},
++               {MENU_ENUM_LABEL_NIRCADA_SERVICES,PARSE_ACTION, true},
+                {MENU_ENUM_LABEL_PLAYLIST_SETTINGS,PARSE_ACTION, true},
+                {MENU_ENUM_LABEL_USER_SETTINGS,PARSE_ACTION, true},
+                {MENU_ENUM_LABEL_DIRECTORY_SETTINGS,PARSE_ACTION, true},
+@@ -6964,7 +7009,7 @@ unsigned menu_displaylist_build_list(file_list_t *list, enum menu_displaylist_ct
+                {MENU_ENUM_LABEL_MENU_DRIVER,           PARSE_ONLY_STRING_OPTIONS},
+                {MENU_ENUM_LABEL_RECORD_DRIVER,         PARSE_ONLY_STRING_OPTIONS},
+                {MENU_ENUM_LABEL_MIDI_DRIVER,           PARSE_ONLY_STRING_OPTIONS},
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+                {MENU_ENUM_LABEL_WIFI_DRIVER,           PARSE_ONLY_STRING_OPTIONS},
+ #endif
+             };
+@@ -7908,7 +7953,7 @@ bool menu_displaylist_ctl(enum menu_displaylist_ctl_state type,
+          /* No-op */
+          break;
+ #endif
+-#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX)
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX) || defined(HAVE_NIRCADA_SWITCH)
+       case DISPLAYLIST_SWITCH_CPU_PROFILE:
+       {
+          unsigned i;
+@@ -7921,7 +7966,7 @@ bool menu_displaylist_ctl(enum menu_displaylist_ctl_state type,
+ 
+          menu_entries_ctl(MENU_ENTRIES_CTL_CLEAR, info->list);
+ 
+-#ifdef HAVE_LAKKA_SWITCH
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_NIRCADA_SWITCH)
+          profile = popen("cpu-profile get", "r");
+          fgets(current_profile, PATH_MAX_LENGTH, profile);
+          pclose(profile);
+@@ -7970,7 +8015,7 @@ bool menu_displaylist_ctl(enum menu_displaylist_ctl_state type,
+ 
+          break;
+       }
+-#if defined(HAVE_LAKKA_SWITCH)
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_NIRCADA_SWITCH)
+       case DISPLAYLIST_SWITCH_GPU_PROFILE:
+       {
+          unsigned i;
+@@ -8559,11 +8604,11 @@ bool menu_displaylist_ctl(enum menu_displaylist_ctl_state type,
+          info->need_clear   = true;
+ #endif
+          break;
+-      case DISPLAYLIST_LAKKA:
++      case DISPLAYLIST_NIRCADA:
+          menu_entries_ctl(MENU_ENTRIES_CTL_CLEAR, info->list);
+ #ifdef HAVE_NETWORKING
+          count = print_buf_lines(info->list, menu->core_buf, "",
+-               (int)menu->core_len, FILE_TYPE_DOWNLOAD_LAKKA,
++               (int)menu->core_len, FILE_TYPE_DOWNLOAD_NIRCADA,
+                true, false);
+ 
+          if (count == 0)
+@@ -9184,7 +9229,7 @@ bool menu_displaylist_ctl(enum menu_displaylist_ctl_state type,
+       case DISPLAYLIST_ACCOUNTS_LIST:
+       case DISPLAYLIST_MENU_FILE_BROWSER_SETTINGS_LIST:
+       case DISPLAYLIST_MENU_VIEWS_SETTINGS_LIST:
+-      case DISPLAYLIST_LAKKA_SERVICES_LIST:
++      case DISPLAYLIST_NIRCADA_SERVICES_LIST:
+       case DISPLAYLIST_MIDI_SETTINGS_LIST:
+       case DISPLAYLIST_CRT_SWITCHRES_SETTINGS_LIST:
+       case DISPLAYLIST_VIDEO_FULLSCREEN_MODE_SETTINGS_LIST:
+@@ -9371,6 +9416,36 @@ bool menu_displaylist_ctl(enum menu_displaylist_ctl_state type,
+                   count++;
+             }
+ 
++            if (menu_entries_append_enum(info->list,
++                     msg_hash_to_str(MENU_ENUM_LABEL_VALUE_PL_THUMBNAILS_UPDATER_LIST),
++                     msg_hash_to_str(MENU_ENUM_LABEL_PL_THUMBNAILS_UPDATER_LIST),
++                     MENU_ENUM_LABEL_PL_THUMBNAILS_UPDATER_LIST,
++                     MENU_SETTING_ACTION, 0, 0))
++               count++;
++            if (menu_entries_append_enum(info->list,
++                     msg_hash_to_str(MENU_ENUM_LABEL_VALUE_DOWNLOAD_CORE_CONTENT),
++                     msg_hash_to_str(MENU_ENUM_LABEL_DOWNLOAD_CORE_CONTENT_DIRS),
++                     MENU_ENUM_LABEL_DOWNLOAD_CORE_CONTENT_DIRS,
++                     MENU_SETTING_ACTION, 0, 0))
++               count++;
++#elif defined(HAVE_NIRCADA)
++            if (menu_entries_append_enum(info->list,
++                     msg_hash_to_str(MENU_ENUM_LABEL_VALUE_UPDATE_NIRCADA),
++                     msg_hash_to_str(MENU_ENUM_LABEL_UPDATE_NIRCADA),
++                     MENU_ENUM_LABEL_UPDATE_NIRCADA,
++                     MENU_SETTING_ACTION, 0, 0))
++               count++;
++
++            if (settings->bools.menu_show_legacy_thumbnail_updater)
++            {
++               if (menu_entries_append_enum(info->list,
++                        msg_hash_to_str(MENU_ENUM_LABEL_VALUE_THUMBNAILS_UPDATER_LIST),
++                        msg_hash_to_str(MENU_ENUM_LABEL_THUMBNAILS_UPDATER_LIST),
++                        MENU_ENUM_LABEL_THUMBNAILS_UPDATER_LIST,
++                        MENU_SETTING_ACTION, 0, 0))
++                  count++;
++            }
++
+             if (menu_entries_append_enum(info->list,
+                      msg_hash_to_str(MENU_ENUM_LABEL_VALUE_PL_THUMBNAILS_UPDATER_LIST),
+                      msg_hash_to_str(MENU_ENUM_LABEL_PL_THUMBNAILS_UPDATER_LIST),
+diff --git a/menu/menu_displaylist.h b/menu/menu_displaylist.h
+index f009552..90bd71b 100644
+--- a/menu/menu_displaylist.h
++++ b/menu/menu_displaylist.h
+@@ -96,7 +96,7 @@ enum menu_displaylist_ctl_state
+    DISPLAYLIST_CORES_UPDATER,
+    DISPLAYLIST_THUMBNAILS_UPDATER,
+    DISPLAYLIST_PL_THUMBNAILS_UPDATER,
+-   DISPLAYLIST_LAKKA,
++   DISPLAYLIST_NIRCADA,
+    DISPLAYLIST_CORES_DETECTED,
+    DISPLAYLIST_CORE_OPTIONS,
+    DISPLAYLIST_CORE_INFO,
+@@ -188,7 +188,7 @@ enum menu_displaylist_ctl_state
+    DISPLAYLIST_NETWORK_SETTINGS_LIST,
+    DISPLAYLIST_NETWORK_HOSTING_SETTINGS_LIST,
+    DISPLAYLIST_NETPLAY_LAN_SCAN_SETTINGS_LIST,
+-   DISPLAYLIST_LAKKA_SERVICES_LIST,
++   DISPLAYLIST_NIRCADA_SERVICES_LIST,
+    DISPLAYLIST_USER_SETTINGS_LIST,
+    DISPLAYLIST_DIRECTORY_SETTINGS_LIST,
+    DISPLAYLIST_PRIVACY_SETTINGS_LIST,
+@@ -225,11 +225,11 @@ enum menu_displaylist_ctl_state
+    DISPLAYLIST_CORE_CONTENT,
+    DISPLAYLIST_CORE_CONTENT_DIRS,
+    DISPLAYLIST_CORE_CONTENT_DIRS_SUBDIR,
+-#ifdef HAVE_LAKKA_SWITCH
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_NIRCADA_SWITCH)
+    DISPLAYLIST_SWITCH_GPU_PROFILE,
+    DISPLAYLIST_SWITCH_BACKLIGHT_CONTROL,
+ #endif
+-#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX)
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX) || defined(HAVE_NIRCADA_SWITCH)
+    DISPLAYLIST_SWITCH_CPU_PROFILE,
+ #endif
+    DISPLAYLIST_MANUAL_CONTENT_SCAN_LIST,
+diff --git a/menu/menu_driver.h b/menu/menu_driver.h
+index 0aac3ad..1373782 100644
+--- a/menu/menu_driver.h
++++ b/menu/menu_driver.h
+@@ -201,11 +201,11 @@ enum menu_settings_type
+    MENU_SETTINGS_SUBSYSTEM_LAST = MENU_SETTINGS_SUBSYSTEM_ADD + RARCH_MAX_SUBSYSTEMS,
+    MENU_SETTINGS_CHEAT_MATCH,
+ 
+-#ifdef HAVE_LAKKA_SWITCH
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_NIRCADA_SWITCH)
+    MENU_SET_SWITCH_GPU_PROFILE,
+    MENU_SET_SWITCH_BRIGHTNESS,
+ #endif
+-#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX)
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX) || defined(HAVE_NIRCADA_SWITCH)
+    MENU_SET_SWITCH_CPU_PROFILE,
+ #endif
+ 
+diff --git a/menu/menu_setting.c b/menu/menu_setting.c
+index d2ce453..af6b136 100644
+--- a/menu/menu_setting.c
++++ b/menu/menu_setting.c
+@@ -90,6 +90,7 @@
+ #include "../performance_counters.h"
+ #include "../setting_list.h"
+ #include "../lakka.h"
++#include "../nircada.h"
+ #include "../retroarch.h"
+ #include "../gfx/video_display_server.h"
+ #include "../managers/cheat_manager.h"
+@@ -151,7 +152,7 @@ enum settings_list_type
+    SETTINGS_LIST_CHEEVOS,
+    SETTINGS_LIST_CORE_UPDATER,
+    SETTINGS_LIST_NETPLAY,
+-   SETTINGS_LIST_LAKKA_SERVICES,
++   SETTINGS_LIST_NIRCADA_SERVICES,
+    SETTINGS_LIST_USER,
+    SETTINGS_LIST_USER_ACCOUNTS,
+    SETTINGS_LIST_USER_ACCOUNTS_CHEEVOS,
+@@ -7001,6 +7002,79 @@ static void localap_enable_toggle_change_handler(void *data)
+ }
+ #endif
+ 
++#ifdef HAVE_NIRCADA
++static void systemd_service_toggle(const char *path, char *unit, bool enable)
++{
++   int      pid = fork();
++   char* args[] = {(char*)"systemctl", NULL, NULL, NULL};
++
++   if (enable)
++      args[1] = (char*)"start";
++   else
++      args[1] = (char*)"stop";
++   args[2] = unit;
++
++   if (enable)
++      filestream_close(filestream_open(path,
++               RETRO_VFS_FILE_ACCESS_WRITE,
++               RETRO_VFS_FILE_ACCESS_HINT_NONE));
++   else
++      filestream_delete(path);
++
++   if (pid == 0)
++      execvp(args[0], args);
++
++   return;
++}
++
++static void ssh_enable_toggle_change_handler(void *data)
++{
++   bool enable           = false;
++   settings_t *settings  = config_get_ptr();
++
++   if (settings && settings->bools.ssh_enable)
++      enable = true;
++
++   systemd_service_toggle(NIRCADA_SSH_PATH, (char*)"sshd.service",
++         enable);
++}
++
++static void samba_enable_toggle_change_handler(void *data)
++{
++   bool enable           = false;
++   settings_t *settings  = config_get_ptr();
++
++   if (settings && settings->bools.samba_enable)
++      enable = true;
++
++   systemd_service_toggle(NIRCADA_SAMBA_PATH, (char*)"smbd.service",
++         enable);
++}
++
++static void bluetooth_enable_toggle_change_handler(void *data)
++{
++   bool enable           = false;
++   settings_t *settings  = config_get_ptr();
++
++   if (settings && settings->bools.bluetooth_enable)
++      enable = true;
++
++   systemd_service_toggle(NIRCADA_BLUETOOTH_PATH, (char*)"bluetooth.service",
++         enable);
++}
++
++static void localap_enable_toggle_change_handler(void *data)
++{
++   bool enable           = false;
++   settings_t *settings  = config_get_ptr();
++
++   if (settings && settings->bools.localap_enable)
++      enable = true;
++
++   driver_wifi_tether_start_stop(enable, NIRCADA_LOCALAP_PATH);
++}
++#endif
++
+ static bool setting_append_list_input_player_options(
+       rarch_setting_t **list,
+       rarch_setting_info_t *list_info,
+@@ -7575,7 +7649,7 @@ static bool setting_append_list(
+                &subgroup_info,
+                parent_group);
+ 
+-#if !defined(IOS) && !defined(HAVE_LAKKA)
++#if !defined(IOS) && !defined(HAVE_LAKKA) && !defined(HAVE_NIRCADA)
+          if (frontend_driver_has_fork())
+          {
+             CONFIG_ACTION(
+@@ -7596,7 +7670,7 @@ static bool setting_append_list(
+                &group_info,
+                &subgroup_info,
+                parent_group);
+-         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ 
+          CONFIG_ACTION(
+                list, list_info,
+@@ -7605,7 +7679,7 @@ static bool setting_append_list(
+                &group_info,
+                &subgroup_info,
+                parent_group);
+-         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ 
+          CONFIG_ACTION(
+                list, list_info,
+@@ -7615,7 +7689,7 @@ static bool setting_append_list(
+                &subgroup_info,
+                parent_group);
+          menu_settings_list_current_add_cmd(list, list_info, CMD_EVENT_MENU_RESET_TO_DEFAULT_CONFIG);
+-         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ 
+          CONFIG_ACTION(
+                list, list_info,
+@@ -7625,7 +7699,7 @@ static bool setting_append_list(
+                &subgroup_info,
+                parent_group);
+          menu_settings_list_current_add_cmd(list, list_info, CMD_EVENT_MENU_SAVE_CURRENT_CONFIG);
+-         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ 
+          CONFIG_ACTION(
+                list, list_info,
+@@ -7635,7 +7709,7 @@ static bool setting_append_list(
+                &subgroup_info,
+                parent_group);
+          menu_settings_list_current_add_cmd(list, list_info, CMD_EVENT_MENU_SAVE_CONFIG);
+-         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ 
+          CONFIG_ACTION(
+                list, list_info,
+@@ -7645,7 +7719,7 @@ static bool setting_append_list(
+                &subgroup_info,
+                parent_group);
+          menu_settings_list_current_add_cmd(list, list_info, CMD_EVENT_MENU_SAVE_CURRENT_CONFIG_OVERRIDE_CORE);
+-         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ 
+          CONFIG_ACTION(
+                list, list_info,
+@@ -7655,7 +7729,7 @@ static bool setting_append_list(
+                &subgroup_info,
+                parent_group);
+          menu_settings_list_current_add_cmd(list, list_info, CMD_EVENT_MENU_SAVE_CURRENT_CONFIG_OVERRIDE_CONTENT_DIR);
+-         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ 
+          CONFIG_ACTION(
+                list, list_info,
+@@ -7665,7 +7739,7 @@ static bool setting_append_list(
+                &subgroup_info,
+                parent_group);
+          menu_settings_list_current_add_cmd(list, list_info, CMD_EVENT_MENU_SAVE_CURRENT_CONFIG_OVERRIDE_GAME);
+-         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ 
+          CONFIG_ACTION(
+                list, list_info,
+@@ -7674,7 +7748,7 @@ static bool setting_append_list(
+                &group_info,
+                &subgroup_info,
+                parent_group);
+-         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ #ifdef HAVE_QT
+          CONFIG_ACTION(
+                list, list_info,
+@@ -7697,7 +7771,7 @@ static bool setting_append_list(
+          menu_settings_list_current_add_cmd(list, list_info, CMD_EVENT_QUIT);
+ #endif
+ 
+-#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX)
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX) || defined(HAVE_NICADA_SWITCH)
+         CONFIG_ACTION(
+               list, list_info,
+               MENU_ENUM_LABEL_SWITCH_CPU_PROFILE,
+@@ -7707,8 +7781,8 @@ static bool setting_append_list(
+               parent_group);
+ #endif
+ 
+-#if defined(HAVE_LAKKA)
+-#ifdef HAVE_LAKKA_SWITCH
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_NIRCADA_SWITCH)
+         CONFIG_ACTION(
+                list, list_info,
+                MENU_ENUM_LABEL_SWITCH_GPU_PROFILE,
+@@ -7751,7 +7825,7 @@ static bool setting_append_list(
+                &group_info,
+                &subgroup_info,
+                parent_group);
+-         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ 
+          CONFIG_ACTION(
+                list, list_info,
+@@ -7793,7 +7867,7 @@ static bool setting_append_list(
+                &group_info,
+                &subgroup_info,
+                parent_group);
+-         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ #endif
+ 
+ #ifdef HAVE_AUDIOMIXER
+@@ -7821,7 +7895,7 @@ static bool setting_append_list(
+                &group_info,
+                &subgroup_info,
+                parent_group);
+-         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ 
+          CONFIG_ACTION(
+                list, list_info,
+@@ -7839,7 +7913,7 @@ static bool setting_append_list(
+                &group_info,
+                &subgroup_info,
+                parent_group);
+-         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ 
+          CONFIG_ACTION(
+                list, list_info,
+@@ -7848,7 +7922,7 @@ static bool setting_append_list(
+                &group_info,
+                &subgroup_info,
+                parent_group);
+-         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ 
+          CONFIG_ACTION(
+                list, list_info,
+@@ -7865,7 +7939,7 @@ static bool setting_append_list(
+                &group_info,
+                &subgroup_info,
+                parent_group);
+-         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ 
+          CONFIG_ACTION(
+                list, list_info,
+@@ -7882,7 +7956,7 @@ static bool setting_append_list(
+                &group_info,
+                &subgroup_info,
+                parent_group);
+-         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ 
+          CONFIG_ACTION(
+                list, list_info,
+@@ -7909,7 +7983,7 @@ static bool setting_append_list(
+                   &group_info,
+                   &subgroup_info,
+                   parent_group);
+-            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+          }
+ 
+          CONFIG_ACTION(
+@@ -7919,7 +7993,7 @@ static bool setting_append_list(
+                &group_info,
+                &subgroup_info,
+                parent_group);
+-         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ 
+ #ifdef HAVE_OVERLAY
+          CONFIG_ACTION(
+@@ -7929,7 +8003,7 @@ static bool setting_append_list(
+                &group_info,
+                &subgroup_info,
+                parent_group);
+-         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ #endif
+ 
+ #ifdef HAVE_VIDEO_LAYOUT
+@@ -7940,7 +8014,7 @@ static bool setting_append_list(
+                &group_info,
+                &subgroup_info,
+                parent_group);
+-         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ #endif
+ 
+          CONFIG_ACTION(
+@@ -7950,7 +8024,7 @@ static bool setting_append_list(
+                &group_info,
+                &subgroup_info,
+                parent_group);
+-         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ 
+          CONFIG_ACTION(
+                list, list_info,
+@@ -8017,7 +8091,7 @@ static bool setting_append_list(
+                &group_info,
+                &subgroup_info,
+                parent_group);
+-         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ 
+          CONFIG_ACTION(
+                list, list_info,
+@@ -8026,7 +8100,7 @@ static bool setting_append_list(
+                &group_info,
+                &subgroup_info,
+                parent_group);
+-         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ 
+ #ifdef HAVE_CHEEVOS
+          CONFIG_ACTION(
+@@ -8045,11 +8119,11 @@ static bool setting_append_list(
+                &group_info,
+                &subgroup_info,
+                parent_group);
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+          SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_ADVANCED);
+ #endif
+ 
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+          if (string_is_not_equal(settings->arrays.wifi_driver, "null"))
+          {
+             CONFIG_ACTION(
+@@ -8069,7 +8143,7 @@ static bool setting_append_list(
+                &group_info,
+                &subgroup_info,
+                parent_group);
+-         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ 
+ #ifdef HAVE_LAKKA
+          CONFIG_ACTION(
+@@ -8080,6 +8154,15 @@ static bool setting_append_list(
+                &subgroup_info,
+                parent_group);
+ #endif
++#ifdef HAVE_NIRCADA
++         CONFIG_ACTION(
++               list, list_info,
++               MENU_ENUM_LABEL_NIRCADA_SERVICES,
++               MENU_ENUM_LABEL_VALUE_NIRCADA_SERVICES,
++               &group_info,
++               &subgroup_info,
++               parent_group);
++#endif
+ 
+          CONFIG_ACTION(
+                list, list_info,
+@@ -8088,7 +8171,7 @@ static bool setting_append_list(
+                &group_info,
+                &subgroup_info,
+                parent_group);
+-         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ 
+          CONFIG_ACTION(
+                list, list_info,
+@@ -8147,7 +8230,7 @@ static bool setting_append_list(
+                   &group_info,
+                   &subgroup_info,
+                   parent_group);
+-            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+          }
+ 
+          for (user = 0; user < MAX_USERS; user++)
+@@ -9314,7 +9397,7 @@ static bool setting_append_list(
+                   general_write_handler,
+                   general_read_handler,
+                   SD_FLAG_NONE);
+-            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ #endif
+ 
+             CONFIG_BOOL(
+@@ -9538,7 +9621,7 @@ static bool setting_append_list(
+                   general_read_handler,
+                   SD_FLAG_CMD_APPLY_AUTO);
+             menu_settings_list_current_add_cmd(list, list_info, CMD_EVENT_REINIT_FROM_TOGGLE);
+-            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ 
+             {
+                CONFIG_BOOL(
+@@ -9555,7 +9638,7 @@ static bool setting_append_list(
+                      general_write_handler,
+                      general_read_handler,
+                      SD_FLAG_NONE);
+-               SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++               SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ 
+                CONFIG_UINT(
+                      list, list_info,
+@@ -9601,7 +9684,7 @@ static bool setting_append_list(
+                   general_write_handler,
+                   general_read_handler);
+             menu_settings_list_current_add_range(list, list_info, 0, 0, 0.001, true, false);
+-            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ 
+             CONFIG_FLOAT(
+                   list, list_info,
+@@ -9620,7 +9703,7 @@ static bool setting_append_list(
+             (*list)[list_info->index - 1].action_select = &setting_action_ok_video_refresh_rate_auto;
+             (*list)[list_info->index - 1].get_string_representation =
+                &setting_get_string_representation_st_float_video_refresh_rate_auto;
+-            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ 
+             {
+                float actual_refresh_rate = video_driver_get_refresh_rate();
+@@ -9642,7 +9725,7 @@ static bool setting_append_list(
+                   (*list)[list_info->index - 1].action_select = &setting_action_ok_video_refresh_rate_polled;
+                   (*list)[list_info->index - 1].get_string_representation =
+                      &setting_get_string_representation_st_float_video_refresh_rate_polled;
+-                  SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++                  SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+                }
+             }
+ 
+@@ -9732,7 +9815,7 @@ static bool setting_append_list(
+                   list,
+                   list_info,
+                   CMD_EVENT_VIDEO_APPLY_STATE_CHANGES);
+-            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ 
+             CONFIG_INT(
+                   list, list_info,
+@@ -9750,7 +9833,7 @@ static bool setting_append_list(
+                   list,
+                   list_info,
+                   CMD_EVENT_VIDEO_APPLY_STATE_CHANGES);
+-            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ 
+ #if defined(GEKKO) || defined(__CELLOS_LV2__)
+             if (true)
+@@ -9789,7 +9872,7 @@ static bool setting_append_list(
+                   list,
+                   list_info,
+                   CMD_EVENT_VIDEO_APPLY_STATE_CHANGES);
+-            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ 
+             CONFIG_UINT(
+                   list, list_info,
+@@ -9813,7 +9896,7 @@ static bool setting_append_list(
+                   list,
+                   list_info,
+                   CMD_EVENT_VIDEO_APPLY_STATE_CHANGES);
+-            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ 
+             END_SUB_GROUP(list, list_info, parent_group);
+             START_SUB_GROUP(list, list_info, "Scaling", &group_info, &subgroup_info, parent_group);
+@@ -9850,7 +9933,7 @@ static bool setting_append_list(
+                      general_read_handler);
+                (*list)[list_info->index - 1].action_ok = &setting_action_ok_uint;
+                menu_settings_list_current_add_range(list, list_info, 1.0, 10.0, 1.0, true, true);
+-               SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++               SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+                CONFIG_UINT(
+                      list, list_info,
+                      &settings->uints.window_position_width,
+@@ -9864,7 +9947,7 @@ static bool setting_append_list(
+                      general_read_handler);
+                (*list)[list_info->index - 1].action_ok = &setting_action_ok_uint_special;
+                menu_settings_list_current_add_range(list, list_info, 0, 7680, 8, true, true);
+-               SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++               SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+                CONFIG_UINT(
+                      list, list_info,
+                      &settings->uints.window_position_height,
+@@ -9878,7 +9961,7 @@ static bool setting_append_list(
+                      general_read_handler);
+                (*list)[list_info->index - 1].action_ok = &setting_action_ok_uint_special;
+                menu_settings_list_current_add_range(list, list_info, 0, 4320, 8, true, true);
+-               SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++               SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SSD_FLAG_NIRCADA_ADVANCED);
+                CONFIG_UINT(
+                      list, list_info,
+                      &settings->uints.video_window_opacity,
+@@ -9893,7 +9976,7 @@ static bool setting_append_list(
+                (*list)[list_info->index - 1].action_ok = &setting_action_ok_uint;
+                (*list)[list_info->index - 1].offset_by = 1;
+                menu_settings_list_current_add_range(list, list_info, 1, 100, 1, true, true);
+-               SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++               SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+             }
+ 
+             CONFIG_BOOL(
+@@ -10120,7 +10203,7 @@ static bool setting_append_list(
+             menu_settings_list_current_add_cmd(list, list_info, CMD_EVENT_VIDEO_SET_BLOCKING_STATE);
+             menu_settings_list_current_add_range(list, list_info, 1, 4, 1, true, true);
+             SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_CMD_APPLY_AUTO);
+-            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ 
+             CONFIG_UINT(
+                   list, list_info,
+@@ -10202,7 +10285,7 @@ static bool setting_append_list(
+                   general_read_handler);
+             (*list)[list_info->index - 1].action_ok = &setting_action_ok_uint;
+             menu_settings_list_current_add_range(list, list_info, 0, 15, 1, true, true);
+-            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ 
+             CONFIG_UINT(
+                   list, list_info,
+@@ -10253,7 +10336,7 @@ static bool setting_append_list(
+                      general_read_handler,
+                      SD_FLAG_NONE
+                      );
+-               SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++               SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+             }
+ #endif
+             END_SUB_GROUP(list, list_info, parent_group);
+@@ -10297,7 +10380,7 @@ static bool setting_append_list(
+                   general_read_handler,
+                   SD_FLAG_NONE
+                   );
+-            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ 
+             CONFIG_PATH(
+                   list, list_info,
+@@ -10315,7 +10398,7 @@ static bool setting_append_list(
+                &setting_get_string_representation_video_filter;
+             menu_settings_list_current_add_values(list, list_info, "filt");
+             menu_settings_list_current_add_cmd(list, list_info, CMD_EVENT_REINIT);
+-            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ 
+             END_SUB_GROUP(list, list_info, parent_group);
+             END_GROUP(list, list_info, parent_group);
+@@ -10547,7 +10630,7 @@ static bool setting_append_list(
+                parent_group,
+                general_write_handler,
+                general_read_handler,
+-               SD_FLAG_LAKKA_ADVANCED
++               SD_FLAG_NIRCADA_ADVANCED
+                );
+ #endif
+ 
+@@ -10581,7 +10664,7 @@ static bool setting_append_list(
+                general_read_handler);
+          (*list)[list_info->index - 1].action_ok = &setting_action_ok_uint;
+          menu_settings_list_current_add_range(list, list_info, -80, 12, 1.0, true, true);
+-         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ #endif
+ 
+          END_SUB_GROUP(list, list_info, parent_group);
+@@ -10611,7 +10694,7 @@ static bool setting_append_list(
+                general_read_handler,
+                SD_FLAG_NONE
+                );
+-         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ 
+          CONFIG_UINT(
+                list, list_info,
+@@ -10627,7 +10710,7 @@ static bool setting_append_list(
+                general_read_handler);
+          (*list)[list_info->index - 1].action_ok     = &setting_action_ok_uint;
+          menu_settings_list_current_add_range(list, list_info, 0, 512, 1.0, true, true);
+-         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ 
+          CONFIG_UINT(
+                list, list_info,
+@@ -10766,7 +10849,7 @@ static bool setting_append_list(
+                general_read_handler);
+          menu_settings_list_current_add_values(list, list_info, "dsp");
+          menu_settings_list_current_add_cmd(list, list_info, CMD_EVENT_DSP_FILTER_INIT);
+-         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ 
+ #ifdef HAVE_WASAPI
+          if (string_is_equal(settings->arrays.audio_driver, "wasapi"))
+@@ -10851,7 +10934,7 @@ static bool setting_append_list(
+                &setting_get_string_representation_max_users;
+             (*list)[list_info->index - 1].offset_by = 1;
+             menu_settings_list_current_add_range(list, list_info, 1, MAX_USERS, 1, true, true);
+-            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ 
+             CONFIG_BOOL(
+                   list, list_info,
+@@ -10868,7 +10951,7 @@ static bool setting_append_list(
+                   general_read_handler,
+                   SD_FLAG_NONE
+                   );
+-            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ 
+             CONFIG_BOOL(
+                   list, list_info,
+@@ -10934,7 +11017,7 @@ static bool setting_append_list(
+             (*list)[list_info->index - 1].get_string_representation =
+                &setting_get_string_representation_poll_type_behavior;
+             menu_settings_list_current_add_range(list, list_info, 0, 2, 1, true, true);
+-            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ 
+ #ifdef GEKKO
+             CONFIG_UINT(
+@@ -11083,7 +11166,7 @@ static bool setting_append_list(
+                   general_read_handler,
+                   SD_FLAG_NONE
+                   );
+-            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ 
+             CONFIG_BOOL(
+                   list, list_info,
+@@ -11175,7 +11258,7 @@ static bool setting_append_list(
+                   general_read_handler);
+             (*list)[list_info->index - 1].action_ok = &setting_action_ok_uint;
+             menu_settings_list_current_add_range(list, list_info, 0, 1.0, 0.01, true, true);
+-            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ 
+             CONFIG_FLOAT(
+                   list, list_info,
+@@ -11505,7 +11588,7 @@ static bool setting_append_list(
+                general_read_handler);
+                (*list)[list_info->index - 1].action_ok = &setting_action_ok_uint_special;
+                menu_settings_list_current_add_range(list, list_info, 1, 8, 1, true, true);
+-               SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++               SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+                (*list)[list_info->index - 1].ui_type   = ST_UI_TYPE_UINT_COMBOBOX;
+ 
+             CONFIG_DIR(
+@@ -12262,7 +12345,7 @@ static bool setting_append_list(
+                   general_read_handler);
+             (*list)[list_info->index - 1].action_ok = &setting_action_ok_uint;
+             menu_settings_list_current_add_range(list, list_info, 0.0, 1.0, 0.010, true, true);
+-            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ 
+             CONFIG_FLOAT(
+                   list, list_info,
+@@ -12278,7 +12361,7 @@ static bool setting_append_list(
+                   general_read_handler);
+             (*list)[list_info->index - 1].action_ok = &setting_action_ok_uint;
+             menu_settings_list_current_add_range(list, list_info, 0.0, 1.0, 0.010, true, true);
+-            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+          }
+ 
+          if (string_is_equal(settings->arrays.menu_driver, "xmb"))
+@@ -12298,7 +12381,7 @@ static bool setting_append_list(
+                   general_read_handler,
+                   SD_FLAG_NONE
+                   );
+-            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+          }
+ 
+          CONFIG_BOOL(
+@@ -12317,7 +12400,7 @@ static bool setting_append_list(
+                SD_FLAG_CMD_APPLY_AUTO
+                );
+          menu_settings_list_current_add_cmd(list, list_info, CMD_EVENT_MENU_PAUSE_LIBRETRO);
+-            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ 
+          CONFIG_BOOL(
+                list, list_info,
+@@ -12892,7 +12975,7 @@ static bool setting_append_list(
+                   general_read_handler);
+             (*list)[list_info->index - 1].action_ok = &setting_action_ok_uint;
+             menu_settings_list_current_add_range(list, list_info, 0, 100, 1, true, true);
+-            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ 
+             CONFIG_PATH(
+                   list, list_info,
+@@ -12906,7 +12989,7 @@ static bool setting_append_list(
+                   parent_group,
+                   general_write_handler,
+                   general_read_handler);
+-            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+             menu_settings_list_current_add_cmd(list, list_info, CMD_EVENT_REINIT);
+             menu_settings_list_current_add_values(list, list_info, "ttf");
+             (*list)[list_info->index - 1].ui_type   = ST_UI_TYPE_FONT_SELECTOR;
+@@ -13155,7 +13238,7 @@ static bool setting_append_list(
+                   parent_group,
+                   general_write_handler,
+                   general_read_handler,
+-                  SD_FLAG_LAKKA_ADVANCED);
++                  SD_FLAG_NIRCADA_ADVANCED);
+ 
+             CONFIG_BOOL(
+                   list, list_info,
+@@ -13170,7 +13253,7 @@ static bool setting_append_list(
+                   parent_group,
+                   general_write_handler,
+                   general_read_handler,
+-                  SD_FLAG_LAKKA_ADVANCED);
++                  SD_FLAG_NIRCADA_ADVANCED);
+ 
+ #ifdef HAVE_VIDEO_LAYOUT
+             CONFIG_BOOL(
+@@ -13186,7 +13269,7 @@ static bool setting_append_list(
+                   parent_group,
+                   general_write_handler,
+                   general_read_handler,
+-                  SD_FLAG_LAKKA_ADVANCED);
++                  SD_FLAG_NIRCADA_ADVANCED);
+ #endif
+ 
+             CONFIG_BOOL(
+@@ -13202,7 +13285,7 @@ static bool setting_append_list(
+                   parent_group,
+                   general_write_handler,
+                   general_read_handler,
+-                  SD_FLAG_LAKKA_ADVANCED);
++                  SD_FLAG_NIRCADA_ADVANCED);
+ 
+             CONFIG_BOOL(
+                   list, list_info,
+@@ -13217,7 +13300,7 @@ static bool setting_append_list(
+                   parent_group,
+                   general_write_handler,
+                   general_read_handler,
+-                  SD_FLAG_LAKKA_ADVANCED);
++                  SD_FLAG_NIRCADA_ADVANCED);
+ 
+             CONFIG_BOOL(
+                   list, list_info,
+@@ -13232,7 +13315,7 @@ static bool setting_append_list(
+                   parent_group,
+                   general_write_handler,
+                   general_read_handler,
+-                  SD_FLAG_LAKKA_ADVANCED);
++                  SD_FLAG_NIRCADA_ADVANCED);
+ 
+             CONFIG_BOOL(
+                   list, list_info,
+@@ -13249,7 +13332,7 @@ static bool setting_append_list(
+                   general_read_handler,
+                   SD_FLAG_NONE);
+ 
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+             CONFIG_BOOL(
+                   list, list_info,
+                   &settings->bools.menu_show_reboot,
+@@ -13316,7 +13399,7 @@ static bool setting_append_list(
+                   general_write_handler,
+                   general_read_handler,
+                   SD_FLAG_NONE);
+-            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ 
+             CONFIG_STRING(
+                list, list_info,
+@@ -13330,7 +13413,7 @@ static bool setting_append_list(
+                parent_group,
+                general_write_handler,
+                general_read_handler);
+-            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_ALLOW_INPUT | SD_FLAG_LAKKA_ADVANCED);
++            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_ALLOW_INPUT | SD_FLAG_NIRCADA_ADVANCED);
+             (*list)[list_info->index - 1].ui_type       = ST_UI_TYPE_PASSWORD_LINE_EDIT;
+          }
+ #endif
+@@ -13445,7 +13528,7 @@ static bool setting_append_list(
+                   general_write_handler,
+                   general_read_handler,
+                   SD_FLAG_NONE);
+-            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++            SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ 
+             CONFIG_BOOL(
+                   list, list_info,
+@@ -14281,7 +14364,7 @@ static bool setting_append_list(
+                general_write_handler,
+                general_read_handler,
+                SD_FLAG_NONE);
+-         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ 
+ #if !defined(RARCH_MOBILE)
+          CONFIG_BOOL(
+@@ -14299,7 +14382,7 @@ static bool setting_append_list(
+                general_read_handler,
+                SD_FLAG_CMD_APPLY_AUTO);
+          menu_settings_list_current_add_cmd(list, list_info, CMD_EVENT_REINIT);
+-         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ #endif
+ 
+ #if defined(_3DS)
+@@ -14364,7 +14447,7 @@ static bool setting_append_list(
+                general_read_handler,
+                SD_FLAG_NONE);
+ 
+-#if !defined(HAVE_LAKKA)
++#if !defined(HAVE_LAKKA) || !defined(HAVE_NIRCADA)
+          CONFIG_BOOL(
+                list, list_info,
+                &settings->bools.menu_show_core_updater,
+@@ -15976,7 +16059,7 @@ static bool setting_append_list(
+          END_SUB_GROUP(list, list_info, parent_group);
+          END_GROUP(list, list_info, parent_group);
+          break;
+-      case SETTINGS_LIST_LAKKA_SERVICES:
++      case SETTINGS_LIST_NIRCADA_SERVICES:
+          {
+ #if defined(HAVE_LAKKA)
+             START_GROUP(list, list_info, &group_info,
+@@ -16056,6 +16139,84 @@ static bool setting_append_list(
+             END_SUB_GROUP(list, list_info, parent_group);
+             END_GROUP(list, list_info, parent_group);
+ #endif
++#if defined(HAVE_NIRCADA)
++            START_GROUP(list, list_info, &group_info,
++                  msg_hash_to_str(MENU_ENUM_LABEL_VALUE_NIRCADA_SERVICES),
++                  parent_group);
++
++            parent_group = msg_hash_to_str(MENU_ENUM_LABEL_SETTINGS);
++
++            START_SUB_GROUP(list, list_info,
++                  msg_hash_to_str(MENU_ENUM_LABEL_VALUE_NIRCADA_SERVICES),
++                  &group_info, &subgroup_info, parent_group);
++
++            CONFIG_BOOL(
++                  list, list_info,
++                  &settings->bools.ssh_enable,
++                  MENU_ENUM_LABEL_SSH_ENABLE,
++                  MENU_ENUM_LABEL_VALUE_SSH_ENABLE,
++                  true,
++                  MENU_ENUM_LABEL_VALUE_OFF,
++                  MENU_ENUM_LABEL_VALUE_ON,
++                  &group_info,
++                  &subgroup_info,
++                  parent_group,
++                  general_write_handler,
++                  general_read_handler,
++                  SD_FLAG_NONE);
++            (*list)[list_info->index - 1].change_handler = ssh_enable_toggle_change_handler;
++
++            CONFIG_BOOL(
++                  list, list_info,
++                  &settings->bools.samba_enable,
++                  MENU_ENUM_LABEL_SAMBA_ENABLE,
++                  MENU_ENUM_LABEL_VALUE_SAMBA_ENABLE,
++                  true,
++                  MENU_ENUM_LABEL_VALUE_OFF,
++                  MENU_ENUM_LABEL_VALUE_ON,
++                  &group_info,
++                  &subgroup_info,
++                  parent_group,
++                  general_write_handler,
++                  general_read_handler,
++                  SD_FLAG_NONE);
++            (*list)[list_info->index - 1].change_handler = samba_enable_toggle_change_handler;
++
++            CONFIG_BOOL(
++                  list, list_info,
++                  &settings->bools.bluetooth_enable,
++                  MENU_ENUM_LABEL_BLUETOOTH_ENABLE,
++                  MENU_ENUM_LABEL_VALUE_BLUETOOTH_ENABLE,
++                  true,
++                  MENU_ENUM_LABEL_VALUE_OFF,
++                  MENU_ENUM_LABEL_VALUE_ON,
++                  &group_info,
++                  &subgroup_info,
++                  parent_group,
++                  general_write_handler,
++                  general_read_handler,
++                  SD_FLAG_NONE);
++            (*list)[list_info->index - 1].change_handler = bluetooth_enable_toggle_change_handler;
++
++            CONFIG_BOOL(
++                  list, list_info,
++                  &settings->bools.localap_enable,
++                  MENU_ENUM_LABEL_LOCALAP_ENABLE,
++                  MENU_ENUM_LABEL_VALUE_LOCALAP_ENABLE,
++                  true,
++                  MENU_ENUM_LABEL_VALUE_OFF,
++                  MENU_ENUM_LABEL_VALUE_ON,
++                  &group_info,
++                  &subgroup_info,
++                  parent_group,
++                  general_write_handler,
++                  general_read_handler,
++                  SD_FLAG_NONE);
++            (*list)[list_info->index - 1].change_handler = localap_enable_toggle_change_handler;
++
++            END_SUB_GROUP(list, list_info, parent_group);
++            END_GROUP(list, list_info, parent_group);
++#endif
+          }
+          break;
+       case SETTINGS_LIST_USER:
+@@ -16074,7 +16235,7 @@ static bool setting_append_list(
+                &group_info,
+                &subgroup_info,
+                parent_group);
+-         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
++         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
+ 
+          CONFIG_STRING(
+                list, list_info,
+@@ -17054,7 +17215,7 @@ static rarch_setting_t *menu_setting_new_internal(rarch_setting_info_t *list_inf
+       SETTINGS_LIST_CHEEVOS,
+       SETTINGS_LIST_CORE_UPDATER,
+       SETTINGS_LIST_NETPLAY,
+-      SETTINGS_LIST_LAKKA_SERVICES,
++      SETTINGS_LIST_NIRCADA_SERVICES,
+       SETTINGS_LIST_USER,
+       SETTINGS_LIST_USER_ACCOUNTS,
+       SETTINGS_LIST_USER_ACCOUNTS_CHEEVOS,
+diff --git a/msg_hash.h b/msg_hash.h
+index 25b6331..b2a917f 100644
+--- a/msg_hash.h
++++ b/msg_hash.h
+@@ -66,7 +66,7 @@ enum msg_file_type
+    FILE_TYPE_DOWNLOAD_CORE_CONTENT,
+    FILE_TYPE_DOWNLOAD_CORE_INFO,
+    FILE_TYPE_DOWNLOAD_THUMBNAIL_CONTENT,
+-   FILE_TYPE_DOWNLOAD_LAKKA,
++   FILE_TYPE_DOWNLOAD_NIRCADA,
+    FILE_TYPE_RDB,
+    FILE_TYPE_RDB_ENTRY,
+    FILE_TYPE_RPL_ENTRY,
+@@ -452,7 +452,7 @@ enum msg_hash_enums
+    MSG_RUNAHEAD_FAILED_TO_LOAD_STATE,
+    MSG_RUNAHEAD_FAILED_TO_CREATE_SECONDARY_INSTANCE,
+    MSG_MISSING_ASSETS,
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+    MSG_LOCALAP_SWITCHING_OFF,
+    MSG_WIFI_DISCONNECT_FROM,
+    MSG_LOCALAP_ALREADY_RUNNING,
+@@ -461,7 +461,6 @@ enum msg_hash_enums
+    MSG_LOCALAP_ERROR_CONFIG_CREATE,
+    MSG_LOCALAP_ERROR_CONFIG_PARSE,
+ #endif
+-
+    MENU_LABEL(MENU_XMB_ANIMATION_HORIZONTAL_HIGHLIGHT),
+    MENU_LABEL(MENU_XMB_ANIMATION_MOVE_UP_DOWN),
+    MENU_LABEL(MENU_XMB_ANIMATION_OPENING_MAIN_MENU),
+@@ -1281,7 +1280,7 @@ enum msg_hash_enums
+    MENU_ENUM_LABEL_DEFERRED_CORE_CONTENT_LIST,
+    MENU_ENUM_LABEL_DEFERRED_CORE_CONTENT_DIRS_LIST,
+    MENU_ENUM_LABEL_DEFERRED_CORE_CONTENT_DIRS_SUBDIR_LIST,
+-   MENU_ENUM_LABEL_DEFERRED_LAKKA_LIST,
++   MENU_ENUM_LABEL_DEFERRED_NIRCADA_LIST,
+    MENU_ENUM_LABEL_DEFERRED_INPUT_HOTKEY_BINDS_LIST,
+    MENU_ENUM_LABEL_DEFERRED_DATABASE_MANAGER_LIST,
+    MENU_ENUM_LABEL_DEFERRED_VIDEO_FILTER,
+@@ -1356,7 +1355,7 @@ enum msg_hash_enums
+    MENU_ENUM_LABEL_DEFERRED_NETWORK_HOSTING_SETTINGS_LIST,
+    MENU_ENUM_LABEL_DEFERRED_NETWORK_SETTINGS_LIST,
+    MENU_ENUM_LABEL_DEFERRED_NETPLAY_LAN_SCAN_SETTINGS_LIST,
+-   MENU_ENUM_LABEL_DEFERRED_LAKKA_SERVICES_LIST,
++   MENU_ENUM_LABEL_DEFERRED_NIRCADA_SERVICES_LIST,
+    MENU_ENUM_LABEL_DEFERRED_USER_SETTINGS_LIST,
+    MENU_ENUM_LABEL_DEFERRED_DIRECTORY_SETTINGS_LIST,
+    MENU_ENUM_LABEL_DEFERRED_PRIVACY_SETTINGS_LIST,
+@@ -1409,7 +1408,7 @@ enum msg_hash_enums
+    /* Online Updater */
+ 
+    MENU_LABEL(UPDATE_ASSETS),
+-   MENU_LABEL(UPDATE_LAKKA),
++   MENU_LABEL(UPDATE_NIRCADA),
+    MENU_LABEL(UPDATE_CHEATS),
+    MENU_LABEL(UPDATE_AUTOCONFIG_PROFILES),
+    MENU_LABEL(UPDATE_DATABASES),
+@@ -1604,7 +1603,7 @@ enum msg_hash_enums
+    MENU_ENUM_LABEL_OVERLAY_NEXT,
+ 
+    MENU_LABEL(NETPLAY_ENABLE),
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+    MENU_LABEL(SSH_ENABLE),
+    MENU_LABEL(SAMBA_ENABLE),
+    MENU_LABEL(BLUETOOTH_ENABLE),
+@@ -2033,7 +2032,7 @@ enum msg_hash_enums
+    MSG_PLAYLIST_MANAGER_PLAYLIST_CLEANED,
+ 
+    MENU_LABEL(CORE_UPDATER_SETTINGS),
+-   MENU_LABEL(LAKKA_SERVICES),
++   MENU_LABEL(NIRCADA_SERVICES),
+    MENU_LABEL(SHADER_APPLY_CHANGES),
+    MENU_LABEL(SHADER_WATCH_FOR_CHANGES),
+    MENU_LABEL(SAVE_NEW_CONFIG),
+@@ -2124,7 +2123,7 @@ enum msg_hash_enums
+ 
+    /* System information */
+ 
+-   MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_LAKKA_VERSION,
++   MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_NIRCADA_VERSION,
+    MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_DYNAMIC_SUPPORT,
+    MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_BUILD_DATE,
+    MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_GIT_VERSION,
+@@ -2370,8 +2369,8 @@ enum msg_hash_enums
+    MENU_ENUM_LABEL_CB_CORE_UPDATER_DOWNLOAD,
+    MENU_ENUM_LABEL_CB_CORE_UPDATER_LIST,
+    MENU_ENUM_LABEL_CB_DOWNLOAD_URL,
+-   MENU_ENUM_LABEL_CB_LAKKA_DOWNLOAD,
+-   MENU_ENUM_LABEL_CB_LAKKA_LIST,
++   MENU_ENUM_LABEL_CB_NIRCADA_DOWNLOAD,
++   MENU_ENUM_LABEL_CB_NIRCADA_LIST,
+    MENU_ENUM_LABEL_CB_MENU_THUMBNAIL,
+    MENU_ENUM_LABEL_CB_MENU_LEFT_THUMBNAIL,
+    MENU_ENUM_LABEL_CB_MENU_SAVESTATE_THUMBNAIL,
+@@ -2399,10 +2398,9 @@ enum msg_hash_enums
+    MENU_ENUM_SUBLABEL_MIXER_ACTION_REMOVE,
+    MENU_ENUM_SUBLABEL_MIXER_ACTION_VOLUME,
+    MENU_ENUM_SUBLABEL_INFORMATION_LIST_LIST,
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+    MENU_ENUM_SUBLABEL_SERVICES_SETTINGS,
+ #endif
+-
+    MENU_LABEL(MENU_WIDGETS_ENABLE),
+    MENU_LABEL(SELECT_FILE),
+    MENU_LABEL(SELECT_FROM_PLAYLIST),
+@@ -2804,7 +2802,7 @@ enum msg_hash_enums
+ #define MENU_LABEL_DEFERRED_ARCHIVE_OPEN_DETECT_CORE                           0xd9452498U
+ #define MENU_LABEL_DEFERRED_ARCHIVE_OPEN                                       0xfa0938b8U
+ #define MENU_LABEL_DEFERRED_CORE_CONTENT_LIST                                  0x76150c63U
+-#define MENU_LABEL_DEFERRED_LAKKA_LIST                                         0x3db437c4U
++#define MENU_LABEL_DEFERRED_NIRCADA_LIST                                       0x3db437c4U
+ #define MENU_LABEL_DEFERRED_INPUT_HOTKEY_BINDS_LIST                            0x10b41d97U
+ #define MENU_LABEL_DEFERRED_CONFIGURATIONS_LIST                                0x679a1b0bU
+ #define MENU_LABEL_DEFERRED_BROWSE_URL_START                                   0xcef58296U
+@@ -2824,7 +2822,7 @@ enum msg_hash_enums
+ 
+ /* Online updater settings */
+ 
+-#define MENU_LABEL_UPDATE_LAKKA                                                0x19b51eebU
++#define MENU_LABEL_UPDATE_NIRCADA                                              0x19b51eebU
+ 
+ /* Information settings */
+ 
+diff --git a/retroarch.c b/retroarch.c
+index b89de35..18a6191 100644
+--- a/retroarch.c
++++ b/retroarch.c
+@@ -810,7 +810,7 @@ static wifi_driver_t wifi_null = {
+ };
+ 
+ static const wifi_driver_t *wifi_drivers[] = {
+-#ifdef HAVE_LAKKA
++#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA)
+    &wifi_connmanctl,
+ #endif
+    &wifi_null,
+@@ -28225,6 +28225,15 @@ static bool rarch_write_debug_info(void)
+    }
+ #endif
+ 
++#ifdef HAVE_NIRCADA
++   if (frontend->get_nircada_version)
++   {
++      frontend->get_nircada_version(str, sizeof(str));
++      filestream_printf(file, "NircadaOS Version: %s\n", str);
++      str[0] = '\0';
++   }
++#endif
++
+    filestream_printf(file, "RetroArch Build Date: %s\n", __DATE__);
+ #ifdef HAVE_GIT_VERSION
+    filestream_printf(file, "RetroArch Git Commit: %s\n", retroarch_git_version);
+diff --git a/setting_list.h b/setting_list.h
+index 321d850..4a538ed 100644
+--- a/setting_list.h
++++ b/setting_list.h
+@@ -81,7 +81,7 @@ enum setting_flags
+    SD_FLAG_CMD_APPLY_AUTO = (1 << 7),
+    SD_FLAG_BROWSER_ACTION = (1 << 8),
+    SD_FLAG_ADVANCED       = (1 << 9),
+-   SD_FLAG_LAKKA_ADVANCED = (1 << 10)
++   SD_FLAG_NIRCADA_ADVANCED = (1 << 10)
+ };
+ 
+ enum settings_free_flags
+diff --git a/switch_performance_profiles.h b/switch_performance_profiles.h
+index 2ee1fd9..2b1cbf4 100644
+--- a/switch_performance_profiles.h
++++ b/switch_performance_profiles.h
+@@ -17,8 +17,8 @@
+ #ifndef __SWITCH_PERFORMANCE_PROFILES_H
+ #define __SWITCH_PERFORMANCE_PROFILES_H
+ 
+-#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX)
+-#ifdef HAVE_LAKKA_SWITCH
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX) || defined(HAVE_NIRCADA_SWITCH)
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_NIRCADA_SWITCH)
+ static char *SWITCH_GPU_PROFILES[] = {
+     "Docked Stock +2",
+     "Docked Stock +1",
+diff --git a/wifi/drivers/connmanctl.c b/wifi/drivers/connmanctl.c
+index ecac5e1..0402859 100644
+--- a/wifi/drivers/connmanctl.c
++++ b/wifi/drivers/connmanctl.c
+@@ -23,6 +23,7 @@
+ #include "../wifi_driver.h"
+ #include "../../retroarch.h"
+ #include "../../lakka.h"
++#include "../../nircada.h"
+ #ifdef HAVE_MENU_WIDGETS
+ #include "../../menu/widgets/menu_widgets.h"
+ #endif
+@@ -289,7 +290,7 @@ static bool connmanctl_connect_ssid(unsigned i, const char* passphrase)
+ 
+    string_list_free(list);
+ 
+-   strlcat(settings_dir, LAKKA_CONNMAN_DIR, sizeof(settings_dir));
++   strlcat(settings_dir, NIRCADA_CONNMAN_DIR, sizeof(settings_dir));
+    strlcat(settings_dir, service, sizeof(settings_dir));
+ 
+    path_mkdir(settings_dir);
+@@ -403,7 +404,7 @@ static void connmanctl_get_connected_servicename(char* servicename, size_t buffe
+                basename $serv ; \
+             fi ; \
+          done",
+-         LAKKA_CONNMAN_DIR);
++         NIRCADA_CONNMAN_DIR);
+ 
+    command_file = popen(command, "r");
+ 
+@@ -514,7 +515,7 @@ static void connmanctl_tether_start_stop(bool start, char* configfile)
+          RARCH_LOG("[CONNMANCTL] Tether start stop: creating new config \"%s\"\n",
+                configfile);
+ 
+-         snprintf(apname, sizeof(apname), "LakkaAccessPoint");
++         snprintf(apname, sizeof(apname), "NircadaAccessPoint");
+          snprintf(passkey, sizeof(passkey), "RetroArch");
+ 
+          fprintf(command_file, "APNAME=%s\nPASSWORD=%s", apname, passkey);
