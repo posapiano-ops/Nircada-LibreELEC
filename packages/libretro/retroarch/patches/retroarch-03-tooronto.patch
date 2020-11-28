@@ -3435,7 +3435,7 @@ index 0aac3ad..1373782 100644
  #endif
  
 diff --git a/menu/menu_setting.c b/menu/menu_setting.c
-index d2ce453..af6b136 100644
+index d2ce453..c74c042 100644
 --- a/menu/menu_setting.c
 +++ b/menu/menu_setting.c
 @@ -90,6 +90,7 @@
@@ -3941,7 +3941,7 @@ index d2ce453..af6b136 100644
                 (*list)[list_info->index - 1].action_ok = &setting_action_ok_uint_special;
                 menu_settings_list_current_add_range(list, list_info, 0, 4320, 8, true, true);
 -               SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
-+               SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SSD_FLAG_NIRCADA_ADVANCED);
++               SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_NIRCADA_ADVANCED);
                 CONFIG_UINT(
                       list, list_info,
                       &settings->uints.video_window_opacity,
