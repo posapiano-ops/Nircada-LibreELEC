@@ -2955,7 +2955,7 @@ index 8d2372a..d410005 100644
              BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_switch_gpu_profile);
              break;
 diff --git a/menu/cbs/menu_cbs_title.c b/menu/cbs/menu_cbs_title.c
-index 076cd8d..96b0a51 100644
+index 076cd8d..1dd3bb3 100644
 --- a/menu/cbs/menu_cbs_title.c
 +++ b/menu/cbs/menu_cbs_title.c
 @@ -382,6 +382,9 @@ default_title_macro(action_get_netplay_lan_scan_settings_list,  MENU_ENUM_LABEL_
@@ -2997,7 +2997,7 @@ index 076cd8d..96b0a51 100644
              BIND_ACTION_GET_TITLE(cbs, action_get_title_core_info_directory);
              break;
 -#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX)
-+#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX) || defined(HAVE_NIRCADA_SWITCH
++#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX) || defined(HAVE_NIRCADA_SWITCH)
           case MENU_ENUM_LABEL_SWITCH_CPU_PROFILE:
              BIND_ACTION_GET_TITLE(cbs, action_get_title_switch_cpu_profile);
              break;
