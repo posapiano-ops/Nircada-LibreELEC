@@ -46,7 +46,7 @@ index ff828e3..cced186 100644
  RetroArch is the reference frontend for the libretro API.
  Popular examples of implementations for this API includes video game system emulators and game engines as well as
 diff --git a/config.def.h b/config.def.h
-index 496d4f5..40ca7b5 100644
+index 496d4f5..b27c72e 100644
 --- a/config.def.h
 +++ b/config.def.h
 @@ -182,7 +182,7 @@
@@ -67,9 +67,17 @@ index 496d4f5..40ca7b5 100644
  static bool menu_show_core_updater       = false;
  #else
  static bool menu_show_core_updater       = true;
-@@ -536,7 +536,7 @@ static unsigned xmb_menu_layout       = 0;
+@@ -533,10 +533,15 @@ static unsigned menu_font_color_red   = 255;
+ static unsigned menu_font_color_green = 255;
+ static unsigned menu_font_color_blue  = 255;
+ static unsigned xmb_menu_layout       = 0;
++#if defined(HAVE_NIRCADA) 
++static unsigned xmb_icon_theme        = XMB_ICON_THEME_RETROACTIVE;
++static unsigned xmb_theme             = XMB_THEME_DARK;
++#else
  static unsigned xmb_icon_theme        = XMB_ICON_THEME_MONOCHROME;
  static unsigned xmb_theme             = XMB_THEME_ELECTRIC_BLUE;
++#endif
  
 -#if defined(HAVE_LAKKA) || defined(__arm__) || defined(__PPC64__) || defined(__ppc64__) || defined(__powerpc64__) || defined(__powerpc__) || defined(__ppc__) || defined(__POWERPC__)
 +#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA) || defined(__arm__) || defined(__PPC64__) || defined(__ppc64__) || defined(__powerpc64__) || defined(__powerpc__) || defined(__ppc__) || defined(__POWERPC__)
