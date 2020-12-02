@@ -55,6 +55,7 @@ RUN apt-get update \
 		xz-utils \
 		zip \
 		zlib1g-dev \
+		libmount-dev \
 	&& rm -rf /var/lib/apt/lists/*
 
 ENV HOME /root
