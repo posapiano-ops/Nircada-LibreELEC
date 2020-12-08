@@ -40,16 +40,33 @@ RUN apt-get update \
 		git-core \
 		gperf \
 		gzip \
+		libavcodec-dev \
 		libjson-perl \
+		libffi-dev \
+		libfreetype6-dev \
+		libgbm-dev \
+		libgdbm-dev \
+		libegl1-mesa-dev \
+		libgles2-mesa-dev \
 		libgfortran-7-dev \
 		libncurses5-dev \
+		libnss3-dev \
         libmount-dev \
+		libreadline-dev \
+		libxkbcommon-dev \
+		libsdl2-dev \
+		libsdl-image1.2-dev \
+		libssl-dev \
+		libxml2-dev \
 		lzop \
 		make \
 		mesa-common-dev \
+		nvidia-cg-toolkit \
+		nvidia-cg-dev \
 		patch \
 		patchutils \
 		perl \
+		python3 \
         python3-dev \
 		sed \
         swig \
@@ -61,6 +78,7 @@ RUN apt-get update \
 		xfonts-utils \
 		xsltproc \
 		xz-utils \
+		yasm \
 		zip \
 		zlib1g-dev \
 	&& rm -rf /var/lib/apt/lists/*

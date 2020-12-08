@@ -19,11 +19,11 @@
 ################################################################################
 
 PKG_NAME="retroarch-assets"
-PKG_VERSION="c2bbf23"
+PKG_VERSION="7aaf52c"
 PKG_REV="1"
 PKG_ARCH="any"
 PKG_LICENSE="GPL"
-PKG_SITE="https://github.com/libretro/retroarch-assets"
+PKG_SITE="https://github.com/posapiano-ops/retroarch-assets"
 PKG_GIT_URL="$PKG_SITE"
 PKG_DEPENDS_TARGET="toolchain"
 PKG_PRIORITY="optional"

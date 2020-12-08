@@ -46,7 +46,7 @@ index ff828e3..cced186 100644
  RetroArch is the reference frontend for the libretro API.
  Popular examples of implementations for this API includes video game system emulators and game engines as well as
 diff --git a/config.def.h b/config.def.h
-index 496d4f5..b27c72e 100644
+index 496d4f5..60418af 100644
 --- a/config.def.h
 +++ b/config.def.h
 @@ -182,7 +182,7 @@
@@ -58,21 +58,12 @@ index 496d4f5..b27c72e 100644
  #define DEFAULT_MOUSE_ENABLE true
  #else
  #define DEFAULT_MOUSE_ENABLE false
-@@ -490,7 +490,7 @@ static bool menu_show_quit_retroarch     = true;
- static bool menu_show_restart_retroarch  = true;
- static bool menu_show_reboot             = true;
- static bool menu_show_shutdown           = true;
--#if defined(HAVE_LAKKA) || defined(VITA) || defined(_3DS)
-+#if defined(HAVE_LAKKA) || defined(HAVE_NIRCADA) || defined(VITA) || defined(_3DS)
- static bool menu_show_core_updater       = false;
- #else
- static bool menu_show_core_updater       = true;
 @@ -533,10 +533,15 @@ static unsigned menu_font_color_red   = 255;
  static unsigned menu_font_color_green = 255;
  static unsigned menu_font_color_blue  = 255;
  static unsigned xmb_menu_layout       = 0;
 +#if defined(HAVE_NIRCADA) 
-+static unsigned xmb_icon_theme        = XMB_ICON_THEME_RETROACTIVE;
++static unsigned xmb_icon_theme        = XMB_ICON_THEME_TOORONTO;
 +static unsigned xmb_theme             = XMB_THEME_DARK;
 +#else
  static unsigned xmb_icon_theme        = XMB_ICON_THEME_MONOCHROME;
@@ -501,7 +492,7 @@ index 96e4275..a836243 100644
        "顯示 Restart RetroArch")
  MSG_HASH(MENU_ENUM_SUBLABEL_MENU_SHOW_QUIT_RETROARCH,
 diff --git a/intl/msg_hash_de.h b/intl/msg_hash_de.h
-index 4faa703..23f1486 100644
+index 4faa703..b8b68bd 100644
 --- a/intl/msg_hash_de.h
 +++ b/intl/msg_hash_de.h
 @@ -6,7 +6,7 @@
@@ -591,7 +582,16 @@ index 4faa703..23f1486 100644
  MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_OVERLAYS,
        "Overlays aktualisieren")
  MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_SLANG_SHADERS,
-@@ -1934,7 +1938,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_ADD_CONTENT_LIST,
+@@ -1824,6 +1828,8 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_CUSTOM,
+       "Benutzerdefiniert")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_FLATUI,
+       "FlatUI")
++MSG_HASH(MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_TOORONTO,
++      "Tooronto")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_MONOCHROME,
+       "Monochrome")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_MONOCHROME_INVERTED,
+@@ -1934,7 +1940,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_ADD_CONTENT_LIST,
        "Sucht nach Inhalten und fügt diese zur Datenbank hinzu.")
  MSG_HASH(MENU_ENUM_SUBLABEL_AUDIO_SETTINGS,
        "Ändere die Einstellungen der Audio-Ausgabe.")
@@ -600,7 +600,7 @@ index 4faa703..23f1486 100644
  MSG_HASH(MENU_ENUM_SUBLABEL_BLUETOOTH_ENABLE,
        "Aktiviere oder deaktiviere Bluetooth.")
  #endif
-@@ -1966,7 +1970,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_INFORMATION_LIST_LIST,
+@@ -1966,7 +1972,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_INFORMATION_LIST_LIST,
        "Zeige Informationen über Core, Netzwerk und das System an.")
  MSG_HASH(MENU_ENUM_SUBLABEL_ONLINE_UPDATER,
        "Lade Erweiterungen, Komponenten und Inhalte für RetroArch herunter.")
@@ -609,7 +609,7 @@ index 4faa703..23f1486 100644
  MSG_HASH(MENU_ENUM_SUBLABEL_SAMBA_ENABLE,
        "Aktiviere die Netzwerkfreigabe deiner Ordner.")
  MSG_HASH(MENU_ENUM_SUBLABEL_SERVICES_SETTINGS,
-@@ -1974,7 +1978,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_SERVICES_SETTINGS,
+@@ -1974,7 +1980,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_SERVICES_SETTINGS,
  #endif
  MSG_HASH(MENU_ENUM_SUBLABEL_SHOW_HIDDEN_FILES,
        "Zeige versteckte Dateien und Ordner im Dateimanager an.")
@@ -694,7 +694,7 @@ index d6e81da..4c92503 100644
      MENU_ENUM_SUBLABEL_BLUETOOTH_ENABLE,
      "Ενεργοποίηση ή απενεργοποίηση bluetooth."
 diff --git a/intl/msg_hash_es.h b/intl/msg_hash_es.h
-index 01d0e08..2a24701 100644
+index 01d0e08..6a2808d 100644
 --- a/intl/msg_hash_es.h
 +++ b/intl/msg_hash_es.h
 @@ -6,7 +6,7 @@
@@ -804,7 +804,18 @@ index 01d0e08..2a24701 100644
      )
  MSG_HASH(
      MENU_ENUM_LABEL_VALUE_UPDATE_OVERLAYS,
-@@ -4564,7 +4570,7 @@ MSG_HASH(
+@@ -4309,6 +4315,10 @@ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_FLATUI,
+     "FlatUI"
+     )
++MSG_HASH(
++    MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_TOORONTO,
++    "Tooronto"
++    )
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_MONOCHROME,
+     "Monochrome"
+@@ -4564,7 +4574,7 @@ MSG_HASH(
      MENU_ENUM_SUBLABEL_AUDIO_SETTINGS,
      "Cambia las opciones de salida de audio."
      )
@@ -813,7 +824,7 @@ index 01d0e08..2a24701 100644
  MSG_HASH(
      MENU_ENUM_SUBLABEL_BLUETOOTH_ENABLE,
      "Activa o desactiva la función de Bluetooth."
-@@ -4638,7 +4644,7 @@ MSG_HASH(
+@@ -4638,7 +4648,7 @@ MSG_HASH(
      MENU_ENUM_SUBLABEL_ONLINE_UPDATER,
      "Descarga componentes y contenido adicional para RetroArch."
      )
@@ -822,7 +833,7 @@ index 01d0e08..2a24701 100644
  MSG_HASH(
      MENU_ENUM_SUBLABEL_SAMBA_ENABLE,
      "Activa o desactiva el compartido de carpetas en red mediante el protocolo SMB."
-@@ -4652,7 +4658,7 @@ MSG_HASH(
+@@ -4652,7 +4662,7 @@ MSG_HASH(
      MENU_ENUM_SUBLABEL_SHOW_HIDDEN_FILES,
      "Muestra archivos y carpetas ocultos en el explorador de archivos."
      )
@@ -831,7 +842,7 @@ index 01d0e08..2a24701 100644
  MSG_HASH(
      MENU_ENUM_SUBLABEL_SSH_ENABLE,
      "Utiliza SSH para acceder a la línea de comandos de forma remota."
-@@ -5936,7 +5942,7 @@ MSG_HASH(
+@@ -5936,7 +5946,7 @@ MSG_HASH(
      MENU_ENUM_SUBLABEL_SYSTEM_INFORMATION,
      "Muestra información específica del dispositivo."
      )
@@ -840,7 +851,7 @@ index 01d0e08..2a24701 100644
  MSG_HASH(
      MENU_ENUM_SUBLABEL_QUIT_RETROARCH,
      "Reinicia el programa."
-@@ -7234,7 +7240,7 @@ MSG_HASH(
+@@ -7234,7 +7244,7 @@ MSG_HASH(
      MENU_ENUM_SUBLABEL_MENU_SHOW_HELP,
      "Muestra la opción «Ayuda»."
      )
@@ -849,7 +860,7 @@ index 01d0e08..2a24701 100644
  MSG_HASH(
      MENU_ENUM_LABEL_VALUE_MENU_SHOW_QUIT_RETROARCH,
      "Mostrar Reiniciar RetroArch"
-@@ -10053,7 +10059,7 @@ MSG_HASH(
+@@ -10053,7 +10063,7 @@ MSG_HASH(
      MENU_ENUM_LABEL_VALUE_DELETE_PLAYLIST,
      "Borrar lista de reproducción"
      )
@@ -859,7 +870,7 @@ index 01d0e08..2a24701 100644
      MENU_ENUM_LABEL_VALUE_LOCALAP_ENABLE,
      "Punto de acceso wifi"
 diff --git a/intl/msg_hash_fr.h b/intl/msg_hash_fr.h
-index 342c07f..57ac720 100644
+index 342c07f..8c49433 100644
 --- a/intl/msg_hash_fr.h
 +++ b/intl/msg_hash_fr.h
 @@ -6,7 +6,7 @@
@@ -969,7 +980,18 @@ index 342c07f..57ac720 100644
      )
  MSG_HASH(
      MENU_ENUM_LABEL_VALUE_UPDATE_OVERLAYS,
-@@ -4557,7 +4563,7 @@ MSG_HASH(
+@@ -4301,6 +4307,10 @@ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_FLATUI,
+     "Minimaliste"
+     )
++MSG_HASH(
++    MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_TOORONTO,
++    "Tooronto"
++    )
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_MONOCHROME,
+     "Monochrome"
+@@ -4557,7 +4567,7 @@ MSG_HASH(
      MENU_ENUM_SUBLABEL_AUDIO_SETTINGS,
      "Modifier les réglages de sortie audio."
      )
@@ -978,7 +1000,7 @@ index 342c07f..57ac720 100644
  MSG_HASH(
      MENU_ENUM_SUBLABEL_BLUETOOTH_ENABLE,
      "Déterminer l'état de Bluetooth."
-@@ -4631,7 +4637,7 @@ MSG_HASH(
+@@ -4631,7 +4641,7 @@ MSG_HASH(
      MENU_ENUM_SUBLABEL_ONLINE_UPDATER,
      "Télécharger des add-ons, des composants et du contenu pour RetroArch."
      )
@@ -987,7 +1009,7 @@ index 342c07f..57ac720 100644
  MSG_HASH(
      MENU_ENUM_SUBLABEL_SAMBA_ENABLE,
      "Partage des dossiers réseau via le protocole SMB."
-@@ -4645,7 +4651,7 @@ MSG_HASH(
+@@ -4645,7 +4655,7 @@ MSG_HASH(
      MENU_ENUM_SUBLABEL_SHOW_HIDDEN_FILES,
      "Affiche les fichiers/dossiers cachés dans le navigateur de fichiers."
      )
@@ -996,7 +1018,7 @@ index 342c07f..57ac720 100644
  MSG_HASH(
      MENU_ENUM_SUBLABEL_SSH_ENABLE,
      "Utiliser SSH pour accéder à la ligne de commande à distance."
-@@ -5917,7 +5923,7 @@ MSG_HASH(
+@@ -5917,7 +5927,7 @@ MSG_HASH(
      MENU_ENUM_SUBLABEL_SYSTEM_INFORMATION,
      "Affiche les informations spécifiques à l'appareil."
      )
@@ -1005,7 +1027,7 @@ index 342c07f..57ac720 100644
  MSG_HASH(
      MENU_ENUM_SUBLABEL_QUIT_RETROARCH,
      "Redémarrer le programme."
-@@ -7215,7 +7221,7 @@ MSG_HASH(
+@@ -7215,7 +7225,7 @@ MSG_HASH(
      MENU_ENUM_SUBLABEL_MENU_SHOW_HELP,
      "Afficher/masquer l'option 'Aide'."
      )
@@ -1014,7 +1036,7 @@ index 342c07f..57ac720 100644
  MSG_HASH(
      MENU_ENUM_LABEL_VALUE_MENU_SHOW_QUIT_RETROARCH,
      "Afficher 'Redémarrer RetroArch'"
-@@ -10034,7 +10040,7 @@ MSG_HASH(
+@@ -10034,7 +10044,7 @@ MSG_HASH(
      MENU_ENUM_LABEL_VALUE_DELETE_PLAYLIST,
      "Supprimer la liste de lecture"
      )
@@ -1024,7 +1046,7 @@ index 342c07f..57ac720 100644
      MENU_ENUM_LABEL_VALUE_LOCALAP_ENABLE,
      "Point d'accès Wi-Fi"
 diff --git a/intl/msg_hash_it.h b/intl/msg_hash_it.h
-index f35b356..7ebc9f9 100644
+index f35b356..6b7501b 100644
 --- a/intl/msg_hash_it.h
 +++ b/intl/msg_hash_it.h
 @@ -6,7 +6,7 @@
@@ -1114,7 +1136,16 @@ index f35b356..7ebc9f9 100644
  MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_OVERLAYS,
        "Aggiorna gli Overlay")
  MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_SLANG_SHADERS,
-@@ -1948,7 +1952,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_ADD_CONTENT_LIST,
+@@ -1838,6 +1842,8 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_CUSTOM,
+       "Personalizzato")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_FLATUI,
+       "FlatUI")
++MSG_HASH(MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_TOORONTO,
++      "Tooronto")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_MONOCHROME,
+       "Monocromatico")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_MONOCHROME_INVERTED,
+@@ -1948,7 +1954,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_ADD_CONTENT_LIST,
        "Effettua la scansione del contenuto e li aggiunge al database.")
  MSG_HASH(MENU_ENUM_SUBLABEL_AUDIO_SETTINGS,
        "Modifica le impostazioni per l'uscita audio.")
@@ -1123,7 +1154,7 @@ index f35b356..7ebc9f9 100644
  MSG_HASH(MENU_ENUM_SUBLABEL_BLUETOOTH_ENABLE,
        "Abilita o disabilita il bluetooth.")
  #endif
-@@ -1982,7 +1986,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_INFORMATION_LIST_LIST,
+@@ -1982,7 +1988,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_INFORMATION_LIST_LIST,
        "Visualizza le informazioni dei core, di rete e di sistema.")
  MSG_HASH(MENU_ENUM_SUBLABEL_ONLINE_UPDATER,
        "Scarica add-ons, componenti, e contenuti per RetroArch.")
@@ -1132,7 +1163,7 @@ index f35b356..7ebc9f9 100644
  MSG_HASH(MENU_ENUM_SUBLABEL_SAMBA_ENABLE,
        "Attiva o disattiva la condivisione di rete delle tue cartelle")
  MSG_HASH(MENU_ENUM_SUBLABEL_SERVICES_SETTINGS,
-@@ -1990,7 +1994,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_SERVICES_SETTINGS,
+@@ -1990,7 +1996,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_SERVICES_SETTINGS,
  #endif
  MSG_HASH(MENU_ENUM_SUBLABEL_SHOW_HIDDEN_FILES,
        "Mostra file / directory nascoste all'interno del file browser.")
@@ -1141,7 +1172,7 @@ index f35b356..7ebc9f9 100644
  MSG_HASH(MENU_ENUM_SUBLABEL_SSH_ENABLE,
        "Abilita o disabilita l'accesso alla riga di comando remota.")
  #endif
-@@ -4012,7 +4016,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_MENU_WIDGETS_ENABLE,
+@@ -4012,7 +4018,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_MENU_WIDGETS_ENABLE,
        "Usa animazioni, notifiche, indicatori e controlli decorati moderni invece del vecchio sistema di solo testo.")
  MSG_HASH(MENU_ENUM_LABEL_VALUE_DELETE_PLAYLIST,
        "Elimina scaletta")
@@ -1151,7 +1182,7 @@ index f35b356..7ebc9f9 100644
        "Punto di accesso della Wi-Fi")
  MSG_HASH(MENU_ENUM_SUBLABEL_LOCALAP_ENABLE,
 diff --git a/intl/msg_hash_ja.h b/intl/msg_hash_ja.h
-index 47894e6..aad0128 100644
+index 47894e6..817205e 100644
 --- a/intl/msg_hash_ja.h
 +++ b/intl/msg_hash_ja.h
 @@ -6,7 +6,7 @@
@@ -1261,7 +1292,18 @@ index 47894e6..aad0128 100644
  )
  MSG_HASH(
     MENU_ENUM_LABEL_VALUE_UPDATE_OVERLAYS,
-@@ -4318,7 +4324,7 @@ MSG_HASH(
+@@ -4060,6 +4066,10 @@ MSG_HASH(
+    MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_FLATUI,
+    "フラットUI"
+ )
++MSG_HASH(
++    MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_TOORONTO,
++    "Tooronto"
++)
+ MSG_HASH(
+    MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_MONOCHROME,
+    "モノクローム"
+@@ -4318,7 +4328,7 @@ MSG_HASH(
     MENU_ENUM_SUBLABEL_AUDIO_SETTINGS,
     "オーディオ出力の設定を変更します。"
  )
@@ -1270,7 +1312,7 @@ index 47894e6..aad0128 100644
  MSG_HASH(
     MENU_ENUM_SUBLABEL_BLUETOOTH_ENABLE,
     "Bluetoothを有効します。"
-@@ -4392,7 +4398,7 @@ MSG_HASH(
+@@ -4392,7 +4402,7 @@ MSG_HASH(
     MENU_ENUM_SUBLABEL_ONLINE_UPDATER,
     "RetroArch用のアドオン, コンポーネント, コンテンツをダウンロードします。"
  )
@@ -1279,7 +1321,7 @@ index 47894e6..aad0128 100644
  MSG_HASH(
     MENU_ENUM_SUBLABEL_SAMBA_ENABLE,
     "フォルダのネットワーク共有を有効します。"
-@@ -4406,7 +4412,7 @@ MSG_HASH(
+@@ -4406,7 +4416,7 @@ MSG_HASH(
     MENU_ENUM_SUBLABEL_SHOW_HIDDEN_FILES,
     "ファイルブラウザの中に隠しファイルとフォルダを表示します。"
  )
@@ -1288,7 +1330,7 @@ index 47894e6..aad0128 100644
  MSG_HASH(
     MENU_ENUM_SUBLABEL_SSH_ENABLE,
     "SSHでのアクセスを有効します。"
-@@ -5656,7 +5662,7 @@ MSG_HASH(
+@@ -5656,7 +5666,7 @@ MSG_HASH(
     MENU_ENUM_SUBLABEL_SYSTEM_INFORMATION,
     "デバイス固有の情報を表示します。"
  )
@@ -1297,7 +1339,7 @@ index 47894e6..aad0128 100644
  MSG_HASH(
     MENU_ENUM_SUBLABEL_QUIT_RETROARCH,
     "RetroArchを終了します。"
-@@ -6951,7 +6957,7 @@ MSG_HASH(
+@@ -6951,7 +6961,7 @@ MSG_HASH(
     MENU_ENUM_SUBLABEL_MENU_SHOW_HELP,
     "[ヘルプ]オプションを表示/非表示にします。"
  )
@@ -1307,7 +1349,7 @@ index 47894e6..aad0128 100644
     MENU_ENUM_LABEL_VALUE_MENU_SHOW_QUIT_RETROARCH,
     "[終了]を表示"
 diff --git a/intl/msg_hash_ko.h b/intl/msg_hash_ko.h
-index 30f8d74..216dc36 100644
+index 30f8d74..6d236c7 100644
 --- a/intl/msg_hash_ko.h
 +++ b/intl/msg_hash_ko.h
 @@ -5,7 +5,7 @@
@@ -1417,7 +1459,18 @@ index 30f8d74..216dc36 100644
      )
  MSG_HASH(
      MENU_ENUM_LABEL_VALUE_UPDATE_OVERLAYS,
-@@ -4302,7 +4308,7 @@ MSG_HASH(
+@@ -4042,6 +4048,10 @@ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_FLATUI,
+     "평면UI"
+     )
++MSG_HASH(
++    MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_TOORONTO,
++    "Tooronto"
++    )
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_MONOCHROME,
+     "흑백"
+@@ -4302,7 +4312,7 @@ MSG_HASH(
      MENU_ENUM_SUBLABEL_AUDIO_SETTINGS,
      "오디오 출력 설정을 변경합니다."
      )
@@ -1426,7 +1479,7 @@ index 30f8d74..216dc36 100644
  MSG_HASH(
      MENU_ENUM_SUBLABEL_BLUETOOTH_ENABLE,
      "블루투스를 사용/해제합니다."
-@@ -4376,7 +4382,7 @@ MSG_HASH(
+@@ -4376,7 +4386,7 @@ MSG_HASH(
      MENU_ENUM_SUBLABEL_ONLINE_UPDATER,
      "RetroArch용 애드온, 구성요소 및 컨텐츠를 다운로드합니다."
      )
@@ -1435,7 +1488,7 @@ index 30f8d74..216dc36 100644
  MSG_HASH(
      MENU_ENUM_SUBLABEL_SAMBA_ENABLE,
      "네트워크 폴더 공유를 설정합니다."
-@@ -4390,7 +4396,7 @@ MSG_HASH(
+@@ -4390,7 +4400,7 @@ MSG_HASH(
      MENU_ENUM_SUBLABEL_SHOW_HIDDEN_FILES,
      "파일 탐색기에 숨김 파일/폴더를 보입니다."
      )
@@ -1444,7 +1497,7 @@ index 30f8d74..216dc36 100644
  MSG_HASH(
      MENU_ENUM_SUBLABEL_SSH_ENABLE,
      "원격 명령줄의 접근 사용을 설정합니다."
-@@ -5662,7 +5668,7 @@ MSG_HASH(
+@@ -5662,7 +5672,7 @@ MSG_HASH(
      MENU_ENUM_SUBLABEL_SYSTEM_INFORMATION,
      "시스템 관련 정보를 표시합니다."
      )
@@ -1453,7 +1506,7 @@ index 30f8d74..216dc36 100644
  MSG_HASH(
      MENU_ENUM_SUBLABEL_QUIT_RETROARCH,
      "프로그램을 재시작합니다."
-@@ -6908,7 +6914,7 @@ MSG_HASH(
+@@ -6908,7 +6918,7 @@ MSG_HASH(
      MENU_ENUM_SUBLABEL_MENU_SHOW_HELP,
      "도움말을 표시/해제합니다."
      )
@@ -1568,7 +1621,7 @@ index 54fb67f..9cc4a82 100644
        "localap_enable")
  #endif
 diff --git a/intl/msg_hash_nl.h b/intl/msg_hash_nl.h
-index 2794de9..77593f0 100644
+index 2794de9..152ea9e 100644
 --- a/intl/msg_hash_nl.h
 +++ b/intl/msg_hash_nl.h
 @@ -271,7 +271,7 @@ MSG_HASH(
@@ -1629,7 +1682,16 @@ index 2794de9..77593f0 100644
  MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_OVERLAYS,
        "Update Overlays")
  MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_SLANG_SHADERS,
-@@ -1729,7 +1733,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_ADD_CONTENT_LIST,
+@@ -1627,6 +1631,8 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_CUSTOM,
+       "Custom")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_FLATUI,
+       "FlatUI")
++MSG_HASH(MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_TOORONTO,
++      "Tooronto")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_MONOCHROME,
+       "Monochrome")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_MONOCHROME_INVERTED,
+@@ -1729,7 +1735,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_ADD_CONTENT_LIST,
        "Scan contents and add to the database.")
  MSG_HASH(MENU_ENUM_SUBLABEL_AUDIO_SETTINGS,
        "Adjusts settings for audio output.")
@@ -1638,7 +1700,7 @@ index 2794de9..77593f0 100644
  MSG_HASH(MENU_ENUM_SUBLABEL_BLUETOOTH_ENABLE,
        "Enable or disable bluetooth.")
  #endif
-@@ -1759,7 +1763,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_INFORMATION_LIST_LIST,
+@@ -1759,7 +1765,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_INFORMATION_LIST_LIST,
        "Toon core, netwerk en systeem informatie.")
  MSG_HASH(MENU_ENUM_SUBLABEL_ONLINE_UPDATER,
        "Download add-ons, components and contents for RetroArch.")
@@ -1647,7 +1709,7 @@ index 2794de9..77593f0 100644
  MSG_HASH(MENU_ENUM_SUBLABEL_SAMBA_ENABLE,
        "Enable or disable network sharing of your folders.")
  MSG_HASH(MENU_ENUM_SUBLABEL_SERVICES_SETTINGS,
-@@ -1767,7 +1771,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_SERVICES_SETTINGS,
+@@ -1767,7 +1773,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_SERVICES_SETTINGS,
  #endif
  MSG_HASH(MENU_ENUM_SUBLABEL_SHOW_HIDDEN_FILES,
        "Show hidden files/directories inside the file browser.")
@@ -1657,7 +1719,7 @@ index 2794de9..77593f0 100644
        "Enable or disable remote command line access.")
  #endif
 diff --git a/intl/msg_hash_pl.h b/intl/msg_hash_pl.h
-index 8964207..28e57bb 100644
+index 8964207..9fc8bde 100644
 --- a/intl/msg_hash_pl.h
 +++ b/intl/msg_hash_pl.h
 @@ -422,7 +422,7 @@ MSG_HASH(
@@ -1729,7 +1791,16 @@ index 8964207..28e57bb 100644
  MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_OVERLAYS,
        "Zaktualizuj nakładki")
  MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_SLANG_SHADERS,
-@@ -2030,7 +2034,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_ADD_CONTENT_LIST,
+@@ -1906,6 +1910,8 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_CUSTOM,
+       "Niestandardowy ")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_FLATUI,
+       "FlatUI")
++MSG_HASH(MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_TOORONTO,
++      "Tooronto")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_MONOCHROME,
+       "Monochromia")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_MONOCHROME_INVERTED,
+@@ -2030,7 +2036,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_ADD_CONTENT_LIST,
        "Skanuj zawartość i dodaj do bazy danych.")
  MSG_HASH(MENU_ENUM_SUBLABEL_AUDIO_SETTINGS,
        "Zmień ustawienia wyjścia audio.")
@@ -1738,7 +1809,7 @@ index 8964207..28e57bb 100644
  MSG_HASH(MENU_ENUM_SUBLABEL_BLUETOOTH_ENABLE,
        "Włącz lub wyłącz bluetooth.")
  #endif
-@@ -2062,7 +2066,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_INFORMATION_LIST_LIST,
+@@ -2062,7 +2068,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_INFORMATION_LIST_LIST,
        "Wyświetl informacje o systemie.")
  MSG_HASH(MENU_ENUM_SUBLABEL_ONLINE_UPDATER,
        "Pobierz dodatki, komponenty i treści do RetroArch.")
@@ -1747,7 +1818,7 @@ index 8964207..28e57bb 100644
  MSG_HASH(MENU_ENUM_SUBLABEL_SAMBA_ENABLE,
        "Włącz lub wyłącz udostępnianie sieciowe folderów.")
  MSG_HASH(MENU_ENUM_SUBLABEL_SERVICES_SETTINGS,
-@@ -2072,7 +2076,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_SHOW_HIDDEN_FILES,
+@@ -2072,7 +2078,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_SHOW_HIDDEN_FILES,
        "Pokaż ukryte pliki/katalogi w przeglądarce plików.")
  MSG_HASH(MENU_ENUM_SUBLABEL_LATENCY_SETTINGS,
        "Zmień ustawienia związane z wideo, dźwiękiem i opóźnieniem sygnału wejściowego.")
@@ -1756,7 +1827,7 @@ index 8964207..28e57bb 100644
  MSG_HASH(MENU_ENUM_SUBLABEL_SSH_ENABLE,
        "Włącz lub wyłącz zdalny dostęp do wiersza poleceń.")
  #endif
-@@ -4039,7 +4043,7 @@ MSG_HASH(
+@@ -4039,7 +4045,7 @@ MSG_HASH(
      MENU_ENUM_LABEL_VALUE_HELP_SEND_DEBUG_INFO,
      "Wyślij informacje o debugowaniu"
      )
@@ -1765,7 +1836,7 @@ index 8964207..28e57bb 100644
  MSG_HASH(
      MENU_ENUM_LABEL_VALUE_MENU_SHOW_QUIT_RETROARCH,
      "Pokaż uruchom ponownie RetroArch"
-@@ -4154,7 +4158,7 @@ MSG_HASH(
+@@ -4154,7 +4160,7 @@ MSG_HASH(
      MENU_ENUM_SUBLABEL_MENU_SAVESTATE_RESUME,
      "Automatyczne zamykanie menu i wznawianie bieżącej zawartości po wybraniu „Zapisz stan” lub „Wczytaj stan” z Szybkiego menu. Wyłączenie tego może poprawić wydajność stanu zapisywania na bardzo wolnych urządzeniach."
      )
@@ -1774,7 +1845,7 @@ index 8964207..28e57bb 100644
  MSG_HASH(
      MENU_ENUM_SUBLABEL_QUIT_RETROARCH,
      "Uruchom ponownie program."
-@@ -4615,7 +4619,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_FPS_UPDATE_INTERVAL,
+@@ -4615,7 +4621,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_FPS_UPDATE_INTERVAL,
  MSG_HASH(MENU_ENUM_LABEL_VALUE_DELETE_PLAYLIST,
      "Usuń listę odtwarzania"
      )
@@ -1784,7 +1855,7 @@ index 8964207..28e57bb 100644
        "Punkt dostępu Wi-Fi")
  MSG_HASH(MENU_ENUM_SUBLABEL_LOCALAP_ENABLE,
 diff --git a/intl/msg_hash_pt_br.h b/intl/msg_hash_pt_br.h
-index bcaefc0..45e8827 100644
+index bcaefc0..df92d8b 100644
 --- a/intl/msg_hash_pt_br.h
 +++ b/intl/msg_hash_pt_br.h
 @@ -6,7 +6,7 @@
@@ -1894,7 +1965,18 @@ index bcaefc0..45e8827 100644
      )
  MSG_HASH(
      MENU_ENUM_LABEL_VALUE_UPDATE_OVERLAYS,
-@@ -4485,7 +4491,7 @@ MSG_HASH(
+@@ -4229,6 +4235,10 @@ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_FLATUI,
+     "FlatUI"
+     )
++MSG_HASH(
++    MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_TOORONTO,
++    "Tooronto"
++    )
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_MONOCHROME,
+     "Monocromático"
+@@ -4485,7 +4495,7 @@ MSG_HASH(
      MENU_ENUM_SUBLABEL_AUDIO_SETTINGS,
      "Altera as configurações de saída de áudio."
      )
@@ -1903,7 +1985,7 @@ index bcaefc0..45e8827 100644
  MSG_HASH(
      MENU_ENUM_SUBLABEL_BLUETOOTH_ENABLE,
      "Habilita ou desabilita o bluetooth."
-@@ -4559,7 +4565,7 @@ MSG_HASH(
+@@ -4559,7 +4569,7 @@ MSG_HASH(
      MENU_ENUM_SUBLABEL_ONLINE_UPDATER,
      "Baixa complementos, componentes e conteúdo para o RetroArch."
      )
@@ -1912,7 +1994,7 @@ index bcaefc0..45e8827 100644
  MSG_HASH(
      MENU_ENUM_SUBLABEL_SAMBA_ENABLE,
      "Habilita ou desabilita o compartilhamento de pastas na rede."
-@@ -4573,7 +4579,7 @@ MSG_HASH(
+@@ -4573,7 +4583,7 @@ MSG_HASH(
      MENU_ENUM_SUBLABEL_SHOW_HIDDEN_FILES,
      "Exibe arquivos/diretórios ocultos no navegador de arquivos."
      )
@@ -1921,7 +2003,7 @@ index bcaefc0..45e8827 100644
  MSG_HASH(
      MENU_ENUM_SUBLABEL_SSH_ENABLE,
      "Habilita ou desabilita o acesso remoto à linha de comando."
-@@ -5849,7 +5855,7 @@ MSG_HASH(
+@@ -5849,7 +5859,7 @@ MSG_HASH(
      MENU_ENUM_SUBLABEL_SYSTEM_INFORMATION,
      "Exibe informações específicas do dispositivo."
      )
@@ -1930,7 +2012,7 @@ index bcaefc0..45e8827 100644
  MSG_HASH(
      MENU_ENUM_SUBLABEL_QUIT_RETROARCH,
      "Reinicia o programa."
-@@ -7111,7 +7117,7 @@ MSG_HASH(
+@@ -7111,7 +7121,7 @@ MSG_HASH(
      MENU_ENUM_SUBLABEL_MENU_SHOW_HELP,
      "Exibi ou oculta a opção 'Ajuda'."
      )
@@ -1939,7 +2021,7 @@ index bcaefc0..45e8827 100644
  MSG_HASH(
      MENU_ENUM_LABEL_VALUE_MENU_SHOW_QUIT_RETROARCH,
      "Exibir 'Sair do RetroArch'"
-@@ -9902,7 +9908,7 @@ MSG_HASH(
+@@ -9902,7 +9912,7 @@ MSG_HASH(
      MENU_ENUM_LABEL_VALUE_DELETE_PLAYLIST,
      "Excluir lista de reprodução"
      )
@@ -1949,7 +2031,7 @@ index bcaefc0..45e8827 100644
      MENU_ENUM_LABEL_VALUE_LOCALAP_ENABLE,
      "Ponto de Acesso Wi-Fi"
 diff --git a/intl/msg_hash_pt_pt.h b/intl/msg_hash_pt_pt.h
-index e8c9ab0..f0ce8a7 100644
+index e8c9ab0..6697895 100644
 --- a/intl/msg_hash_pt_pt.h
 +++ b/intl/msg_hash_pt_pt.h
 @@ -370,7 +370,7 @@ MSG_HASH(
@@ -2010,7 +2092,16 @@ index e8c9ab0..f0ce8a7 100644
  MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_OVERLAYS,
        "Atualizar overlays")
  MSG_HASH(MENU_ENUM_LABEL_VALUE_UPDATE_SLANG_SHADERS,
-@@ -1844,7 +1848,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_ADD_CONTENT_LIST,
+@@ -1740,6 +1744,8 @@ MSG_HASH(MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_CUSTOM,
+       "Personalizar")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_FLATUI,
+       "Cores planas")
++MSG_HASH(MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_TOORONTO,
++      "Tooronto")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_MONOCHROME,
+       "Monocromático")
+ MSG_HASH(MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_MONOCHROME_INVERTED,
+@@ -1844,7 +1850,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_ADD_CONTENT_LIST,
        "Procurar por conteúdo e adicionar à base de dados.")
  MSG_HASH(MENU_ENUM_SUBLABEL_AUDIO_SETTINGS,
        "Modificar as definições de saída de som.")
@@ -2019,7 +2110,7 @@ index e8c9ab0..f0ce8a7 100644
  MSG_HASH(MENU_ENUM_SUBLABEL_BLUETOOTH_ENABLE,
        "Ativar/desativar Bluetooth.")
  #endif
-@@ -1876,7 +1880,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_INFORMATION_LIST_LIST,
+@@ -1876,7 +1882,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_INFORMATION_LIST_LIST,
        "Mostrar informações do núcleo, rede e sistema.")
  MSG_HASH(MENU_ENUM_SUBLABEL_ONLINE_UPDATER,
        "Transferir complementos, componentes e conteúdos para o RetroArch.")
@@ -2028,7 +2119,7 @@ index e8c9ab0..f0ce8a7 100644
  MSG_HASH(MENU_ENUM_SUBLABEL_SAMBA_ENABLE,
        "Ativar/desativar partilha de pastas na rede.")
  MSG_HASH(MENU_ENUM_SUBLABEL_SERVICES_SETTINGS,
-@@ -1884,7 +1888,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_SERVICES_SETTINGS,
+@@ -1884,7 +1890,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_SERVICES_SETTINGS,
  #endif
  MSG_HASH(MENU_ENUM_SUBLABEL_SHOW_HIDDEN_FILES,
        "Mostrar ficheiros/pastas escondidos no explorador de ficheiros.")
@@ -2037,7 +2128,7 @@ index e8c9ab0..f0ce8a7 100644
  MSG_HASH(MENU_ENUM_SUBLABEL_SSH_ENABLE,
        "Ativar/desativar acesso remoto pela linha de comandos.")
  #endif
-@@ -3840,7 +3844,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_MENU_WIDGETS_ENABLE,
+@@ -3840,7 +3846,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_MENU_WIDGETS_ENABLE,
        "Use modern decorated animations, notifications, indicators and controls instead of the old text only system.")
  MSG_HASH(MENU_ENUM_LABEL_VALUE_DELETE_PLAYLIST,
        "Apagar a lista de reprodução")
@@ -2147,7 +2238,7 @@ index 0ddd9da..2b43f85 100644
        "Включить или отключить удаленный доступ к командной строке.")
  #endif
 diff --git a/intl/msg_hash_tr.h b/intl/msg_hash_tr.h
-index 9d5cf21..1f6177c 100644
+index 9d5cf21..f19ec82 100644
 --- a/intl/msg_hash_tr.h
 +++ b/intl/msg_hash_tr.h
 @@ -6,7 +6,7 @@
@@ -2255,7 +2346,18 @@ index 9d5cf21..1f6177c 100644
      "Lakka'yı Güncelle"
      )
  MSG_HASH(
-@@ -4189,7 +4195,7 @@ MSG_HASH(
+@@ -3929,6 +3935,10 @@ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_FLATUI,
+     "Düz Kullanıcı Arayüzü"
+     )
++MSG_HASH(
++    MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_TOORONTO,
++    "Tooronto"
++    )
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_MONOCHROME,
+     "Monokrom"
+@@ -4189,7 +4199,7 @@ MSG_HASH(
      MENU_ENUM_SUBLABEL_AUDIO_SETTINGS,
      "Ses çıkışı ayarlarını değiştirin."
      )
@@ -2264,7 +2366,7 @@ index 9d5cf21..1f6177c 100644
  MSG_HASH(
      MENU_ENUM_SUBLABEL_BLUETOOTH_ENABLE,
      "Bluetooth durumunu belirler."
-@@ -4263,7 +4269,7 @@ MSG_HASH(
+@@ -4263,7 +4273,7 @@ MSG_HASH(
      MENU_ENUM_SUBLABEL_ONLINE_UPDATER,
      "RetroArch için eklentiler, bileşenler ve içerikler indirin."
      )
@@ -2273,7 +2375,7 @@ index 9d5cf21..1f6177c 100644
  MSG_HASH(
      MENU_ENUM_SUBLABEL_SAMBA_ENABLE,
      "Ağ klasörlerini SMB protokolü ile paylaşın."
-@@ -4277,7 +4283,7 @@ MSG_HASH(
+@@ -4277,7 +4287,7 @@ MSG_HASH(
      MENU_ENUM_SUBLABEL_SHOW_HIDDEN_FILES,
      "Dosya tarayıcısının içindeki gizli dosyaları/dizinleri göster."
      )
@@ -2282,7 +2384,7 @@ index 9d5cf21..1f6177c 100644
  MSG_HASH(
      MENU_ENUM_SUBLABEL_SSH_ENABLE,
      "Uzaktan komut satırına erişmek için SSH kullanın."
-@@ -5525,7 +5531,7 @@ MSG_HASH(
+@@ -5525,7 +5535,7 @@ MSG_HASH(
      MENU_ENUM_SUBLABEL_SYSTEM_INFORMATION,
      "Aygıta özgü bilgileri gösterir."
      )
@@ -2291,7 +2393,7 @@ index 9d5cf21..1f6177c 100644
  MSG_HASH(
      MENU_ENUM_SUBLABEL_QUIT_RETROARCH,
      "Programı yeniden başlat."
-@@ -6741,7 +6747,7 @@ MSG_HASH(
+@@ -6741,7 +6751,7 @@ MSG_HASH(
      MENU_ENUM_SUBLABEL_MENU_SHOW_HELP,
      "'Yardım' seçeneğini göster/gizle."
      )
@@ -2300,7 +2402,7 @@ index 9d5cf21..1f6177c 100644
  MSG_HASH(
      MENU_ENUM_LABEL_VALUE_MENU_SHOW_QUIT_RETROARCH,
      "RetroArch'ı Yeniden Başlat'ı göster"
-@@ -9300,7 +9306,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_MENU_WIDGETS_ENABLE,
+@@ -9300,7 +9310,7 @@ MSG_HASH(MENU_ENUM_SUBLABEL_MENU_WIDGETS_ENABLE,
        "Yalnızca eski metin sistemi yerine modern dekore edilmiş animasyonları, bildirimleri, göstergeleri ve kontrolleri kullanın.")
  MSG_HASH(MENU_ENUM_LABEL_VALUE_DELETE_PLAYLIST,
        "Parça listesini sil")
@@ -2310,7 +2412,7 @@ index 9d5cf21..1f6177c 100644
        "Wi-Fi Erişim Noktası")
  MSG_HASH(MENU_ENUM_SUBLABEL_LOCALAP_ENABLE,
 diff --git a/intl/msg_hash_us.h b/intl/msg_hash_us.h
-index 3081630..90cb06a 100644
+index 3081630..3434d83 100644
 --- a/intl/msg_hash_us.h
 +++ b/intl/msg_hash_us.h
 @@ -1,4 +1,4 @@
@@ -2417,7 +2519,18 @@ index 3081630..90cb06a 100644
      )
  MSG_HASH(
      MENU_ENUM_LABEL_VALUE_UPDATE_OVERLAYS,
-@@ -4621,7 +4627,7 @@ MSG_HASH(
+@@ -4365,6 +4371,10 @@ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_FLATUI,
+     "FlatUI"
+     )
++MSG_HASH(
++    MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_TOORONTO,
++    "Tooronto"
++    )
+ MSG_HASH(
+     MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_MONOCHROME,
+     "Monochrome"
+@@ -4621,7 +4631,7 @@ MSG_HASH(
      MENU_ENUM_SUBLABEL_AUDIO_SETTINGS,
      "Change audio output settings."
      )
@@ -2426,7 +2539,7 @@ index 3081630..90cb06a 100644
  MSG_HASH(
      MENU_ENUM_SUBLABEL_BLUETOOTH_ENABLE,
      "Determines the state of Bluetooth."
-@@ -4695,7 +4701,7 @@ MSG_HASH(
+@@ -4695,7 +4705,7 @@ MSG_HASH(
      MENU_ENUM_SUBLABEL_ONLINE_UPDATER,
      "Download add-ons, components, and content for RetroArch."
      )
@@ -2435,7 +2548,7 @@ index 3081630..90cb06a 100644
  MSG_HASH(
      MENU_ENUM_SUBLABEL_SAMBA_ENABLE,
      "Share network folders through the SMB protocol."
-@@ -4709,7 +4715,7 @@ MSG_HASH(
+@@ -4709,7 +4719,7 @@ MSG_HASH(
      MENU_ENUM_SUBLABEL_SHOW_HIDDEN_FILES,
      "Show hidden files/directories inside the file browser."
      )
@@ -2444,7 +2557,7 @@ index 3081630..90cb06a 100644
  MSG_HASH(
      MENU_ENUM_SUBLABEL_SSH_ENABLE,
      "Use SSH to access the command line remotely."
-@@ -5993,7 +5999,7 @@ MSG_HASH(
+@@ -5993,7 +6003,7 @@ MSG_HASH(
      MENU_ENUM_SUBLABEL_SYSTEM_INFORMATION,
      "Show information specific to the device."
      )
@@ -2453,7 +2566,7 @@ index 3081630..90cb06a 100644
  MSG_HASH(
      MENU_ENUM_SUBLABEL_QUIT_RETROARCH,
      "Restart the program."
-@@ -7291,7 +7297,7 @@ MSG_HASH(
+@@ -7291,7 +7301,7 @@ MSG_HASH(
      MENU_ENUM_SUBLABEL_MENU_SHOW_HELP,
      "Show/hide the 'Help' option."
      )
@@ -2462,7 +2575,7 @@ index 3081630..90cb06a 100644
  MSG_HASH(
      MENU_ENUM_LABEL_VALUE_MENU_SHOW_QUIT_RETROARCH,
      "Show Restart RetroArch"
-@@ -10114,7 +10120,7 @@ MSG_HASH(
+@@ -10114,7 +10124,7 @@ MSG_HASH(
      MENU_ENUM_SUBLABEL_DELETE_PLAYLIST,
      "Remove playlist from filesystem."
      )
@@ -3125,11 +3238,33 @@ index 7bb6d28..8435150 100644
        case MENU_SET_SWITCH_BRIGHTNESS:
           return ozone->icons_textures[OZONE_ENTRIES_ICONS_TEXTURE_BRIGHTNESS];
  #endif
+diff --git a/menu/drivers/stripes.c b/menu/drivers/stripes.c
+index 2ca8eac..48e0aef 100644
+--- a/menu/drivers/stripes.c
++++ b/menu/drivers/stripes.c
+@@ -369,6 +369,8 @@ const char* stripes_theme_ident(void)
+    {
+       case XMB_ICON_THEME_FLATUI:
+          return "flatui";
++      case XMB_ICON_THEME_TOORONTO:
++         return "tooronto";
+       case XMB_ICON_THEME_RETROACTIVE:
+          return "retroactive";
+       case XMB_ICON_THEME_RETROSYSTEM:
 diff --git a/menu/drivers/xmb.c b/menu/drivers/xmb.c
-index 15da4b7..880630f 100644
+index 15da4b7..651250c 100644
 --- a/menu/drivers/xmb.c
 +++ b/menu/drivers/xmb.c
-@@ -2415,7 +2415,7 @@ static uintptr_t xmb_icon_get_id(xmb_handle_t *xmb,
+@@ -481,6 +481,8 @@ const char* xmb_theme_ident(void)
+    {
+       case XMB_ICON_THEME_FLATUI:
+          return "flatui";
++      case XMB_ICON_THEME_TOORONTO:
++         return "tooronto";
+       case XMB_ICON_THEME_RETROACTIVE:
+          return "retroactive";
+       case XMB_ICON_THEME_RETROSYSTEM:
+@@ -2415,7 +2417,7 @@ static uintptr_t xmb_icon_get_id(xmb_handle_t *xmb,
        case MENU_ENUM_LABEL_ONLINE_UPDATER:
        case MENU_ENUM_LABEL_UPDATER_SETTINGS:
           return xmb->textures.list[XMB_TEXTURE_UPDATER];
@@ -3138,7 +3273,7 @@ index 15da4b7..880630f 100644
           return xmb->textures.list[XMB_TEXTURE_MAIN_MENU];
        case MENU_ENUM_LABEL_UPDATE_CHEATS:
           return xmb->textures.list[XMB_TEXTURE_CHEAT_OPTIONS];
-@@ -2519,10 +2519,10 @@ static uintptr_t xmb_icon_get_id(xmb_handle_t *xmb,
+@@ -2519,10 +2521,10 @@ static uintptr_t xmb_icon_get_id(xmb_handle_t *xmb,
        case MENU_ENUM_LABEL_SHOW_WIMP:
        case MENU_ENUM_LABEL_USER_INTERFACE_SETTINGS:
           return xmb->textures.list[XMB_TEXTURE_UI];
@@ -3151,7 +3286,7 @@ index 15da4b7..880630f 100644
        case MENU_ENUM_LABEL_SWITCH_CPU_PROFILE:
           return xmb->textures.list[XMB_TEXTURE_POWER];
  #endif
-@@ -2665,7 +2665,7 @@ static uintptr_t xmb_icon_get_id(xmb_handle_t *xmb,
+@@ -2665,7 +2667,7 @@ static uintptr_t xmb_icon_get_id(xmb_handle_t *xmb,
           return xmb->textures.list[XMB_TEXTURE_RELOAD];
        case MENU_SETTING_ACTION_PAUSE_ACHIEVEMENTS:
           return xmb->textures.list[XMB_TEXTURE_PAUSE];
@@ -3160,7 +3295,7 @@ index 15da4b7..880630f 100644
        case MENU_SET_SWITCH_BRIGHTNESS:
           return xmb->textures.list[XMB_TEXTURE_BRIGHTNESS];
  #endif
-@@ -6253,12 +6253,12 @@ static int xmb_list_push(void *data, void *userdata,
+@@ -6253,12 +6255,12 @@ static int xmb_list_push(void *data, void *userdata,
                 menu_displaylist_setting(&entry);
              }
  
@@ -3197,6 +3332,18 @@ index 6844771..c2cdf47 100644
     ACTION_OK_DL_USER_SETTINGS_LIST,
     ACTION_OK_DL_DIRECTORY_SETTINGS_LIST,
     ACTION_OK_DL_PRIVACY_SETTINGS_LIST,
+diff --git a/menu/menu_defines.h b/menu/menu_defines.h
+index 82c2e43..79a189d 100644
+--- a/menu/menu_defines.h
++++ b/menu/menu_defines.h
+@@ -225,6 +225,7 @@ enum xmb_color_theme
+ enum xmb_icon_theme
+ {
+    XMB_ICON_THEME_MONOCHROME = 0,
++   XMB_ICON_THEME_TOORONTO,
+    XMB_ICON_THEME_FLATUI,
+    XMB_ICON_THEME_RETROACTIVE,
+    XMB_ICON_THEME_PIXEL,
 diff --git a/menu/menu_displaylist.c b/menu/menu_displaylist.c
 index 940ea71..8cf6c16 100644
 --- a/menu/menu_displaylist.c
@@ -3443,7 +3590,7 @@ index 0aac3ad..1373782 100644
  #endif
  
 diff --git a/menu/menu_setting.c b/menu/menu_setting.c
-index d2ce453..c74c042 100644
+index d2ce453..1398c44 100644
 --- a/menu/menu_setting.c
 +++ b/menu/menu_setting.c
 @@ -90,6 +90,7 @@
@@ -3463,7 +3610,18 @@ index d2ce453..c74c042 100644
     SETTINGS_LIST_USER,
     SETTINGS_LIST_USER_ACCOUNTS,
     SETTINGS_LIST_USER_ACCOUNTS_CHEEVOS,
-@@ -7001,6 +7002,79 @@ static void localap_enable_toggle_change_handler(void *data)
+@@ -3776,6 +3777,10 @@ static void setting_get_string_representation_uint_xmb_icon_theme(
+          strlcpy(s,
+                msg_hash_to_str(MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_FLATUI), len);
+          break;
++      case XMB_ICON_THEME_TOORONTO:
++         strlcpy(s,
++               msg_hash_to_str(MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_TOORONTO), len);
++         break;
+       case XMB_ICON_THEME_RETROACTIVE:
+          strlcpy(s,
+                msg_hash_to_str(MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_RETROACTIVE), len);
+@@ -7001,6 +7006,79 @@ static void localap_enable_toggle_change_handler(void *data)
  }
  #endif
  
@@ -3543,7 +3701,7 @@ index d2ce453..c74c042 100644
  static bool setting_append_list_input_player_options(
        rarch_setting_t **list,
        rarch_setting_info_t *list_info,
-@@ -7575,7 +7649,7 @@ static bool setting_append_list(
+@@ -7575,7 +7653,7 @@ static bool setting_append_list(
                 &subgroup_info,
                 parent_group);
  
@@ -3552,7 +3710,7 @@ index d2ce453..c74c042 100644
           if (frontend_driver_has_fork())
           {
              CONFIG_ACTION(
-@@ -7596,7 +7670,7 @@ static bool setting_append_list(
+@@ -7596,7 +7674,7 @@ static bool setting_append_list(
                 &group_info,
                 &subgroup_info,
                 parent_group);
@@ -3561,7 +3719,7 @@ index d2ce453..c74c042 100644
  
           CONFIG_ACTION(
                 list, list_info,
-@@ -7605,7 +7679,7 @@ static bool setting_append_list(
+@@ -7605,7 +7683,7 @@ static bool setting_append_list(
                 &group_info,
                 &subgroup_info,
                 parent_group);
@@ -3570,7 +3728,7 @@ index d2ce453..c74c042 100644
  
           CONFIG_ACTION(
                 list, list_info,
-@@ -7615,7 +7689,7 @@ static bool setting_append_list(
+@@ -7615,7 +7693,7 @@ static bool setting_append_list(
                 &subgroup_info,
                 parent_group);
           menu_settings_list_current_add_cmd(list, list_info, CMD_EVENT_MENU_RESET_TO_DEFAULT_CONFIG);
@@ -3579,7 +3737,7 @@ index d2ce453..c74c042 100644
  
           CONFIG_ACTION(
                 list, list_info,
-@@ -7625,7 +7699,7 @@ static bool setting_append_list(
+@@ -7625,7 +7703,7 @@ static bool setting_append_list(
                 &subgroup_info,
                 parent_group);
           menu_settings_list_current_add_cmd(list, list_info, CMD_EVENT_MENU_SAVE_CURRENT_CONFIG);
@@ -3588,7 +3746,7 @@ index d2ce453..c74c042 100644
  
           CONFIG_ACTION(
                 list, list_info,
-@@ -7635,7 +7709,7 @@ static bool setting_append_list(
+@@ -7635,7 +7713,7 @@ static bool setting_append_list(
                 &subgroup_info,
                 parent_group);
           menu_settings_list_current_add_cmd(list, list_info, CMD_EVENT_MENU_SAVE_CONFIG);
@@ -3597,7 +3755,7 @@ index d2ce453..c74c042 100644
  
           CONFIG_ACTION(
                 list, list_info,
-@@ -7645,7 +7719,7 @@ static bool setting_append_list(
+@@ -7645,7 +7723,7 @@ static bool setting_append_list(
                 &subgroup_info,
                 parent_group);
           menu_settings_list_current_add_cmd(list, list_info, CMD_EVENT_MENU_SAVE_CURRENT_CONFIG_OVERRIDE_CORE);
@@ -3606,7 +3764,7 @@ index d2ce453..c74c042 100644
  
           CONFIG_ACTION(
                 list, list_info,
-@@ -7655,7 +7729,7 @@ static bool setting_append_list(
+@@ -7655,7 +7733,7 @@ static bool setting_append_list(
                 &subgroup_info,
                 parent_group);
           menu_settings_list_current_add_cmd(list, list_info, CMD_EVENT_MENU_SAVE_CURRENT_CONFIG_OVERRIDE_CONTENT_DIR);
@@ -3615,7 +3773,7 @@ index d2ce453..c74c042 100644
  
           CONFIG_ACTION(
                 list, list_info,
-@@ -7665,7 +7739,7 @@ static bool setting_append_list(
+@@ -7665,7 +7743,7 @@ static bool setting_append_list(
                 &subgroup_info,
                 parent_group);
           menu_settings_list_current_add_cmd(list, list_info, CMD_EVENT_MENU_SAVE_CURRENT_CONFIG_OVERRIDE_GAME);
@@ -3624,7 +3782,7 @@ index d2ce453..c74c042 100644
  
           CONFIG_ACTION(
                 list, list_info,
-@@ -7674,7 +7748,7 @@ static bool setting_append_list(
+@@ -7674,7 +7752,7 @@ static bool setting_append_list(
                 &group_info,
                 &subgroup_info,
                 parent_group);
@@ -3633,7 +3791,7 @@ index d2ce453..c74c042 100644
  #ifdef HAVE_QT
           CONFIG_ACTION(
                 list, list_info,
-@@ -7697,7 +7771,7 @@ static bool setting_append_list(
+@@ -7697,7 +7775,7 @@ static bool setting_append_list(
           menu_settings_list_current_add_cmd(list, list_info, CMD_EVENT_QUIT);
  #endif
  
@@ -3642,7 +3800,7 @@ index d2ce453..c74c042 100644
          CONFIG_ACTION(
                list, list_info,
                MENU_ENUM_LABEL_SWITCH_CPU_PROFILE,
-@@ -7707,8 +7781,8 @@ static bool setting_append_list(
+@@ -7707,8 +7785,8 @@ static bool setting_append_list(
                parent_group);
  #endif
  
@@ -3653,7 +3811,7 @@ index d2ce453..c74c042 100644
          CONFIG_ACTION(
                 list, list_info,
                 MENU_ENUM_LABEL_SWITCH_GPU_PROFILE,
-@@ -7751,7 +7825,7 @@ static bool setting_append_list(
+@@ -7751,7 +7829,7 @@ static bool setting_append_list(
                 &group_info,
                 &subgroup_info,
                 parent_group);
@@ -3662,7 +3820,7 @@ index d2ce453..c74c042 100644
  
           CONFIG_ACTION(
                 list, list_info,
-@@ -7793,7 +7867,7 @@ static bool setting_append_list(
+@@ -7793,7 +7871,7 @@ static bool setting_append_list(
                 &group_info,
                 &subgroup_info,
                 parent_group);
@@ -3671,7 +3829,7 @@ index d2ce453..c74c042 100644
  #endif
  
  #ifdef HAVE_AUDIOMIXER
-@@ -7821,7 +7895,7 @@ static bool setting_append_list(
+@@ -7821,7 +7899,7 @@ static bool setting_append_list(
                 &group_info,
                 &subgroup_info,
                 parent_group);
@@ -3680,7 +3838,7 @@ index d2ce453..c74c042 100644
  
           CONFIG_ACTION(
                 list, list_info,
-@@ -7839,7 +7913,7 @@ static bool setting_append_list(
+@@ -7839,7 +7917,7 @@ static bool setting_append_list(
                 &group_info,
                 &subgroup_info,
                 parent_group);
@@ -3689,7 +3847,7 @@ index d2ce453..c74c042 100644
  
           CONFIG_ACTION(
                 list, list_info,
-@@ -7848,7 +7922,7 @@ static bool setting_append_list(
+@@ -7848,7 +7926,7 @@ static bool setting_append_list(
                 &group_info,
                 &subgroup_info,
                 parent_group);
@@ -3698,7 +3856,7 @@ index d2ce453..c74c042 100644
  
           CONFIG_ACTION(
                 list, list_info,
-@@ -7865,7 +7939,7 @@ static bool setting_append_list(
+@@ -7865,7 +7943,7 @@ static bool setting_append_list(
                 &group_info,
                 &subgroup_info,
                 parent_group);
@@ -3707,7 +3865,7 @@ index d2ce453..c74c042 100644
  
           CONFIG_ACTION(
                 list, list_info,
-@@ -7882,7 +7956,7 @@ static bool setting_append_list(
+@@ -7882,7 +7960,7 @@ static bool setting_append_list(
                 &group_info,
                 &subgroup_info,
                 parent_group);
@@ -3716,7 +3874,7 @@ index d2ce453..c74c042 100644
  
           CONFIG_ACTION(
                 list, list_info,
-@@ -7909,7 +7983,7 @@ static bool setting_append_list(
+@@ -7909,7 +7987,7 @@ static bool setting_append_list(
                    &group_info,
                    &subgroup_info,
                    parent_group);
@@ -3725,7 +3883,7 @@ index d2ce453..c74c042 100644
           }
  
           CONFIG_ACTION(
-@@ -7919,7 +7993,7 @@ static bool setting_append_list(
+@@ -7919,7 +7997,7 @@ static bool setting_append_list(
                 &group_info,
                 &subgroup_info,
                 parent_group);
@@ -3734,7 +3892,7 @@ index d2ce453..c74c042 100644
  
  #ifdef HAVE_OVERLAY
           CONFIG_ACTION(
-@@ -7929,7 +8003,7 @@ static bool setting_append_list(
+@@ -7929,7 +8007,7 @@ static bool setting_append_list(
                 &group_info,
                 &subgroup_info,
                 parent_group);
@@ -3743,7 +3901,7 @@ index d2ce453..c74c042 100644
  #endif
  
  #ifdef HAVE_VIDEO_LAYOUT
-@@ -7940,7 +8014,7 @@ static bool setting_append_list(
+@@ -7940,7 +8018,7 @@ static bool setting_append_list(
                 &group_info,
                 &subgroup_info,
                 parent_group);
@@ -3752,7 +3910,7 @@ index d2ce453..c74c042 100644
  #endif
  
           CONFIG_ACTION(
-@@ -7950,7 +8024,7 @@ static bool setting_append_list(
+@@ -7950,7 +8028,7 @@ static bool setting_append_list(
                 &group_info,
                 &subgroup_info,
                 parent_group);
@@ -3761,7 +3919,7 @@ index d2ce453..c74c042 100644
  
           CONFIG_ACTION(
                 list, list_info,
-@@ -8017,7 +8091,7 @@ static bool setting_append_list(
+@@ -8017,7 +8095,7 @@ static bool setting_append_list(
                 &group_info,
                 &subgroup_info,
                 parent_group);
@@ -3770,7 +3928,7 @@ index d2ce453..c74c042 100644
  
           CONFIG_ACTION(
                 list, list_info,
-@@ -8026,7 +8100,7 @@ static bool setting_append_list(
+@@ -8026,7 +8104,7 @@ static bool setting_append_list(
                 &group_info,
                 &subgroup_info,
                 parent_group);
@@ -3779,7 +3937,7 @@ index d2ce453..c74c042 100644
  
  #ifdef HAVE_CHEEVOS
           CONFIG_ACTION(
-@@ -8045,11 +8119,11 @@ static bool setting_append_list(
+@@ -8045,11 +8123,11 @@ static bool setting_append_list(
                 &group_info,
                 &subgroup_info,
                 parent_group);
@@ -3793,7 +3951,7 @@ index d2ce453..c74c042 100644
           if (string_is_not_equal(settings->arrays.wifi_driver, "null"))
           {
              CONFIG_ACTION(
-@@ -8069,7 +8143,7 @@ static bool setting_append_list(
+@@ -8069,7 +8147,7 @@ static bool setting_append_list(
                 &group_info,
                 &subgroup_info,
                 parent_group);
@@ -3802,7 +3960,7 @@ index d2ce453..c74c042 100644
  
  #ifdef HAVE_LAKKA
           CONFIG_ACTION(
-@@ -8080,6 +8154,15 @@ static bool setting_append_list(
+@@ -8080,6 +8158,15 @@ static bool setting_append_list(
                 &subgroup_info,
                 parent_group);
  #endif
@@ -3818,7 +3976,7 @@ index d2ce453..c74c042 100644
  
           CONFIG_ACTION(
                 list, list_info,
-@@ -8088,7 +8171,7 @@ static bool setting_append_list(
+@@ -8088,7 +8175,7 @@ static bool setting_append_list(
                 &group_info,
                 &subgroup_info,
                 parent_group);
@@ -3827,7 +3985,7 @@ index d2ce453..c74c042 100644
  
           CONFIG_ACTION(
                 list, list_info,
-@@ -8147,7 +8230,7 @@ static bool setting_append_list(
+@@ -8147,7 +8234,7 @@ static bool setting_append_list(
                    &group_info,
                    &subgroup_info,
                    parent_group);
@@ -3836,7 +3994,7 @@ index d2ce453..c74c042 100644
           }
  
           for (user = 0; user < MAX_USERS; user++)
-@@ -9314,7 +9397,7 @@ static bool setting_append_list(
+@@ -9314,7 +9401,7 @@ static bool setting_append_list(
                    general_write_handler,
                    general_read_handler,
                    SD_FLAG_NONE);
@@ -3845,7 +4003,7 @@ index d2ce453..c74c042 100644
  #endif
  
              CONFIG_BOOL(
-@@ -9538,7 +9621,7 @@ static bool setting_append_list(
+@@ -9538,7 +9625,7 @@ static bool setting_append_list(
                    general_read_handler,
                    SD_FLAG_CMD_APPLY_AUTO);
              menu_settings_list_current_add_cmd(list, list_info, CMD_EVENT_REINIT_FROM_TOGGLE);
@@ -3854,7 +4012,7 @@ index d2ce453..c74c042 100644
  
              {
                 CONFIG_BOOL(
-@@ -9555,7 +9638,7 @@ static bool setting_append_list(
+@@ -9555,7 +9642,7 @@ static bool setting_append_list(
                       general_write_handler,
                       general_read_handler,
                       SD_FLAG_NONE);
@@ -3863,7 +4021,7 @@ index d2ce453..c74c042 100644
  
                 CONFIG_UINT(
                       list, list_info,
-@@ -9601,7 +9684,7 @@ static bool setting_append_list(
+@@ -9601,7 +9688,7 @@ static bool setting_append_list(
                    general_write_handler,
                    general_read_handler);
              menu_settings_list_current_add_range(list, list_info, 0, 0, 0.001, true, false);
@@ -3872,7 +4030,7 @@ index d2ce453..c74c042 100644
  
              CONFIG_FLOAT(
                    list, list_info,
-@@ -9620,7 +9703,7 @@ static bool setting_append_list(
+@@ -9620,7 +9707,7 @@ static bool setting_append_list(
              (*list)[list_info->index - 1].action_select = &setting_action_ok_video_refresh_rate_auto;
              (*list)[list_info->index - 1].get_string_representation =
                 &setting_get_string_representation_st_float_video_refresh_rate_auto;
@@ -3881,7 +4039,7 @@ index d2ce453..c74c042 100644
  
              {
                 float actual_refresh_rate = video_driver_get_refresh_rate();
-@@ -9642,7 +9725,7 @@ static bool setting_append_list(
+@@ -9642,7 +9729,7 @@ static bool setting_append_list(
                    (*list)[list_info->index - 1].action_select = &setting_action_ok_video_refresh_rate_polled;
                    (*list)[list_info->index - 1].get_string_representation =
                       &setting_get_string_representation_st_float_video_refresh_rate_polled;
@@ -3890,7 +4048,7 @@ index d2ce453..c74c042 100644
                 }
              }
  
-@@ -9732,7 +9815,7 @@ static bool setting_append_list(
+@@ -9732,7 +9819,7 @@ static bool setting_append_list(
                    list,
                    list_info,
                    CMD_EVENT_VIDEO_APPLY_STATE_CHANGES);
@@ -3899,7 +4057,7 @@ index d2ce453..c74c042 100644
  
              CONFIG_INT(
                    list, list_info,
-@@ -9750,7 +9833,7 @@ static bool setting_append_list(
+@@ -9750,7 +9837,7 @@ static bool setting_append_list(
                    list,
                    list_info,
                    CMD_EVENT_VIDEO_APPLY_STATE_CHANGES);
@@ -3908,7 +4066,7 @@ index d2ce453..c74c042 100644
  
  #if defined(GEKKO) || defined(__CELLOS_LV2__)
              if (true)
-@@ -9789,7 +9872,7 @@ static bool setting_append_list(
+@@ -9789,7 +9876,7 @@ static bool setting_append_list(
                    list,
                    list_info,
                    CMD_EVENT_VIDEO_APPLY_STATE_CHANGES);
@@ -3917,7 +4075,7 @@ index d2ce453..c74c042 100644
  
              CONFIG_UINT(
                    list, list_info,
-@@ -9813,7 +9896,7 @@ static bool setting_append_list(
+@@ -9813,7 +9900,7 @@ static bool setting_append_list(
                    list,
                    list_info,
                    CMD_EVENT_VIDEO_APPLY_STATE_CHANGES);
@@ -3926,7 +4084,7 @@ index d2ce453..c74c042 100644
  
              END_SUB_GROUP(list, list_info, parent_group);
              START_SUB_GROUP(list, list_info, "Scaling", &group_info, &subgroup_info, parent_group);
-@@ -9850,7 +9933,7 @@ static bool setting_append_list(
+@@ -9850,7 +9937,7 @@ static bool setting_append_list(
                       general_read_handler);
                 (*list)[list_info->index - 1].action_ok = &setting_action_ok_uint;
                 menu_settings_list_current_add_range(list, list_info, 1.0, 10.0, 1.0, true, true);
@@ -3935,7 +4093,7 @@ index d2ce453..c74c042 100644
                 CONFIG_UINT(
                       list, list_info,
                       &settings->uints.window_position_width,
-@@ -9864,7 +9947,7 @@ static bool setting_append_list(
+@@ -9864,7 +9951,7 @@ static bool setting_append_list(
                       general_read_handler);
                 (*list)[list_info->index - 1].action_ok = &setting_action_ok_uint_special;
                 menu_settings_list_current_add_range(list, list_info, 0, 7680, 8, true, true);
@@ -3944,7 +4102,7 @@ index d2ce453..c74c042 100644
                 CONFIG_UINT(
                       list, list_info,
                       &settings->uints.window_position_height,
-@@ -9878,7 +9961,7 @@ static bool setting_append_list(
+@@ -9878,7 +9965,7 @@ static bool setting_append_list(
                       general_read_handler);
                 (*list)[list_info->index - 1].action_ok = &setting_action_ok_uint_special;
                 menu_settings_list_current_add_range(list, list_info, 0, 4320, 8, true, true);
@@ -3953,7 +4111,7 @@ index d2ce453..c74c042 100644
                 CONFIG_UINT(
                       list, list_info,
                       &settings->uints.video_window_opacity,
-@@ -9893,7 +9976,7 @@ static bool setting_append_list(
+@@ -9893,7 +9980,7 @@ static bool setting_append_list(
                 (*list)[list_info->index - 1].action_ok = &setting_action_ok_uint;
                 (*list)[list_info->index - 1].offset_by = 1;
                 menu_settings_list_current_add_range(list, list_info, 1, 100, 1, true, true);
@@ -3962,7 +4120,7 @@ index d2ce453..c74c042 100644
              }
  
              CONFIG_BOOL(
-@@ -10120,7 +10203,7 @@ static bool setting_append_list(
+@@ -10120,7 +10207,7 @@ static bool setting_append_list(
              menu_settings_list_current_add_cmd(list, list_info, CMD_EVENT_VIDEO_SET_BLOCKING_STATE);
              menu_settings_list_current_add_range(list, list_info, 1, 4, 1, true, true);
              SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_CMD_APPLY_AUTO);
@@ -3971,7 +4129,7 @@ index d2ce453..c74c042 100644
  
              CONFIG_UINT(
                    list, list_info,
-@@ -10202,7 +10285,7 @@ static bool setting_append_list(
+@@ -10202,7 +10289,7 @@ static bool setting_append_list(
                    general_read_handler);
              (*list)[list_info->index - 1].action_ok = &setting_action_ok_uint;
              menu_settings_list_current_add_range(list, list_info, 0, 15, 1, true, true);
@@ -3980,7 +4138,7 @@ index d2ce453..c74c042 100644
  
              CONFIG_UINT(
                    list, list_info,
-@@ -10253,7 +10336,7 @@ static bool setting_append_list(
+@@ -10253,7 +10340,7 @@ static bool setting_append_list(
                       general_read_handler,
                       SD_FLAG_NONE
                       );
@@ -3989,7 +4147,7 @@ index d2ce453..c74c042 100644
              }
  #endif
              END_SUB_GROUP(list, list_info, parent_group);
-@@ -10297,7 +10380,7 @@ static bool setting_append_list(
+@@ -10297,7 +10384,7 @@ static bool setting_append_list(
                    general_read_handler,
                    SD_FLAG_NONE
                    );
@@ -3998,7 +4156,7 @@ index d2ce453..c74c042 100644
  
              CONFIG_PATH(
                    list, list_info,
-@@ -10315,7 +10398,7 @@ static bool setting_append_list(
+@@ -10315,7 +10402,7 @@ static bool setting_append_list(
                 &setting_get_string_representation_video_filter;
              menu_settings_list_current_add_values(list, list_info, "filt");
              menu_settings_list_current_add_cmd(list, list_info, CMD_EVENT_REINIT);
@@ -4007,7 +4165,7 @@ index d2ce453..c74c042 100644
  
              END_SUB_GROUP(list, list_info, parent_group);
              END_GROUP(list, list_info, parent_group);
-@@ -10547,7 +10630,7 @@ static bool setting_append_list(
+@@ -10547,7 +10634,7 @@ static bool setting_append_list(
                 parent_group,
                 general_write_handler,
                 general_read_handler,
@@ -4016,7 +4174,7 @@ index d2ce453..c74c042 100644
                 );
  #endif
  
-@@ -10581,7 +10664,7 @@ static bool setting_append_list(
+@@ -10581,7 +10668,7 @@ static bool setting_append_list(
                 general_read_handler);
           (*list)[list_info->index - 1].action_ok = &setting_action_ok_uint;
           menu_settings_list_current_add_range(list, list_info, -80, 12, 1.0, true, true);
@@ -4025,7 +4183,7 @@ index d2ce453..c74c042 100644
  #endif
  
           END_SUB_GROUP(list, list_info, parent_group);
-@@ -10611,7 +10694,7 @@ static bool setting_append_list(
+@@ -10611,7 +10698,7 @@ static bool setting_append_list(
                 general_read_handler,
                 SD_FLAG_NONE
                 );
@@ -4034,7 +4192,7 @@ index d2ce453..c74c042 100644
  
           CONFIG_UINT(
                 list, list_info,
-@@ -10627,7 +10710,7 @@ static bool setting_append_list(
+@@ -10627,7 +10714,7 @@ static bool setting_append_list(
                 general_read_handler);
           (*list)[list_info->index - 1].action_ok     = &setting_action_ok_uint;
           menu_settings_list_current_add_range(list, list_info, 0, 512, 1.0, true, true);
@@ -4043,7 +4201,7 @@ index d2ce453..c74c042 100644
  
           CONFIG_UINT(
                 list, list_info,
-@@ -10766,7 +10849,7 @@ static bool setting_append_list(
+@@ -10766,7 +10853,7 @@ static bool setting_append_list(
                 general_read_handler);
           menu_settings_list_current_add_values(list, list_info, "dsp");
           menu_settings_list_current_add_cmd(list, list_info, CMD_EVENT_DSP_FILTER_INIT);
@@ -4052,7 +4210,7 @@ index d2ce453..c74c042 100644
  
  #ifdef HAVE_WASAPI
           if (string_is_equal(settings->arrays.audio_driver, "wasapi"))
-@@ -10851,7 +10934,7 @@ static bool setting_append_list(
+@@ -10851,7 +10938,7 @@ static bool setting_append_list(
                 &setting_get_string_representation_max_users;
              (*list)[list_info->index - 1].offset_by = 1;
              menu_settings_list_current_add_range(list, list_info, 1, MAX_USERS, 1, true, true);
@@ -4061,7 +4219,7 @@ index d2ce453..c74c042 100644
  
              CONFIG_BOOL(
                    list, list_info,
-@@ -10868,7 +10951,7 @@ static bool setting_append_list(
+@@ -10868,7 +10955,7 @@ static bool setting_append_list(
                    general_read_handler,
                    SD_FLAG_NONE
                    );
@@ -4070,7 +4228,7 @@ index d2ce453..c74c042 100644
  
              CONFIG_BOOL(
                    list, list_info,
-@@ -10934,7 +11017,7 @@ static bool setting_append_list(
+@@ -10934,7 +11021,7 @@ static bool setting_append_list(
              (*list)[list_info->index - 1].get_string_representation =
                 &setting_get_string_representation_poll_type_behavior;
              menu_settings_list_current_add_range(list, list_info, 0, 2, 1, true, true);
@@ -4079,7 +4237,7 @@ index d2ce453..c74c042 100644
  
  #ifdef GEKKO
              CONFIG_UINT(
-@@ -11083,7 +11166,7 @@ static bool setting_append_list(
+@@ -11083,7 +11170,7 @@ static bool setting_append_list(
                    general_read_handler,
                    SD_FLAG_NONE
                    );
@@ -4088,7 +4246,7 @@ index d2ce453..c74c042 100644
  
              CONFIG_BOOL(
                    list, list_info,
-@@ -11175,7 +11258,7 @@ static bool setting_append_list(
+@@ -11175,7 +11262,7 @@ static bool setting_append_list(
                    general_read_handler);
              (*list)[list_info->index - 1].action_ok = &setting_action_ok_uint;
              menu_settings_list_current_add_range(list, list_info, 0, 1.0, 0.01, true, true);
@@ -4097,7 +4255,7 @@ index d2ce453..c74c042 100644
  
              CONFIG_FLOAT(
                    list, list_info,
-@@ -11505,7 +11588,7 @@ static bool setting_append_list(
+@@ -11505,7 +11592,7 @@ static bool setting_append_list(
                 general_read_handler);
                 (*list)[list_info->index - 1].action_ok = &setting_action_ok_uint_special;
                 menu_settings_list_current_add_range(list, list_info, 1, 8, 1, true, true);
@@ -4106,7 +4264,7 @@ index d2ce453..c74c042 100644
                 (*list)[list_info->index - 1].ui_type   = ST_UI_TYPE_UINT_COMBOBOX;
  
              CONFIG_DIR(
-@@ -12262,7 +12345,7 @@ static bool setting_append_list(
+@@ -12262,7 +12349,7 @@ static bool setting_append_list(
                    general_read_handler);
              (*list)[list_info->index - 1].action_ok = &setting_action_ok_uint;
              menu_settings_list_current_add_range(list, list_info, 0.0, 1.0, 0.010, true, true);
@@ -4115,7 +4273,7 @@ index d2ce453..c74c042 100644
  
              CONFIG_FLOAT(
                    list, list_info,
-@@ -12278,7 +12361,7 @@ static bool setting_append_list(
+@@ -12278,7 +12365,7 @@ static bool setting_append_list(
                    general_read_handler);
              (*list)[list_info->index - 1].action_ok = &setting_action_ok_uint;
              menu_settings_list_current_add_range(list, list_info, 0.0, 1.0, 0.010, true, true);
@@ -4124,7 +4282,7 @@ index d2ce453..c74c042 100644
           }
  
           if (string_is_equal(settings->arrays.menu_driver, "xmb"))
-@@ -12298,7 +12381,7 @@ static bool setting_append_list(
+@@ -12298,7 +12385,7 @@ static bool setting_append_list(
                    general_read_handler,
                    SD_FLAG_NONE
                    );
@@ -4133,7 +4291,7 @@ index d2ce453..c74c042 100644
           }
  
           CONFIG_BOOL(
-@@ -12317,7 +12400,7 @@ static bool setting_append_list(
+@@ -12317,7 +12404,7 @@ static bool setting_append_list(
                 SD_FLAG_CMD_APPLY_AUTO
                 );
           menu_settings_list_current_add_cmd(list, list_info, CMD_EVENT_MENU_PAUSE_LIBRETRO);
@@ -4142,7 +4300,7 @@ index d2ce453..c74c042 100644
  
           CONFIG_BOOL(
                 list, list_info,
-@@ -12892,7 +12975,7 @@ static bool setting_append_list(
+@@ -12892,7 +12979,7 @@ static bool setting_append_list(
                    general_read_handler);
              (*list)[list_info->index - 1].action_ok = &setting_action_ok_uint;
              menu_settings_list_current_add_range(list, list_info, 0, 100, 1, true, true);
@@ -4151,7 +4309,7 @@ index d2ce453..c74c042 100644
  
              CONFIG_PATH(
                    list, list_info,
-@@ -12906,7 +12989,7 @@ static bool setting_append_list(
+@@ -12906,7 +12993,7 @@ static bool setting_append_list(
                    parent_group,
                    general_write_handler,
                    general_read_handler);
@@ -4160,7 +4318,7 @@ index d2ce453..c74c042 100644
              menu_settings_list_current_add_cmd(list, list_info, CMD_EVENT_REINIT);
              menu_settings_list_current_add_values(list, list_info, "ttf");
              (*list)[list_info->index - 1].ui_type   = ST_UI_TYPE_FONT_SELECTOR;
-@@ -13155,7 +13238,7 @@ static bool setting_append_list(
+@@ -13155,7 +13242,7 @@ static bool setting_append_list(
                    parent_group,
                    general_write_handler,
                    general_read_handler,
@@ -4169,7 +4327,7 @@ index d2ce453..c74c042 100644
  
              CONFIG_BOOL(
                    list, list_info,
-@@ -13170,7 +13253,7 @@ static bool setting_append_list(
+@@ -13170,7 +13257,7 @@ static bool setting_append_list(
                    parent_group,
                    general_write_handler,
                    general_read_handler,
@@ -4178,7 +4336,7 @@ index d2ce453..c74c042 100644
  
  #ifdef HAVE_VIDEO_LAYOUT
              CONFIG_BOOL(
-@@ -13186,7 +13269,7 @@ static bool setting_append_list(
+@@ -13186,7 +13273,7 @@ static bool setting_append_list(
                    parent_group,
                    general_write_handler,
                    general_read_handler,
@@ -4187,7 +4345,7 @@ index d2ce453..c74c042 100644
  #endif
  
              CONFIG_BOOL(
-@@ -13202,7 +13285,7 @@ static bool setting_append_list(
+@@ -13202,7 +13289,7 @@ static bool setting_append_list(
                    parent_group,
                    general_write_handler,
                    general_read_handler,
@@ -4196,7 +4354,7 @@ index d2ce453..c74c042 100644
  
              CONFIG_BOOL(
                    list, list_info,
-@@ -13217,7 +13300,7 @@ static bool setting_append_list(
+@@ -13217,7 +13304,7 @@ static bool setting_append_list(
                    parent_group,
                    general_write_handler,
                    general_read_handler,
@@ -4205,7 +4363,7 @@ index d2ce453..c74c042 100644
  
              CONFIG_BOOL(
                    list, list_info,
-@@ -13232,7 +13315,7 @@ static bool setting_append_list(
+@@ -13232,7 +13319,7 @@ static bool setting_append_list(
                    parent_group,
                    general_write_handler,
                    general_read_handler,
@@ -4214,7 +4372,7 @@ index d2ce453..c74c042 100644
  
              CONFIG_BOOL(
                    list, list_info,
-@@ -13249,7 +13332,7 @@ static bool setting_append_list(
+@@ -13249,7 +13336,7 @@ static bool setting_append_list(
                    general_read_handler,
                    SD_FLAG_NONE);
  
@@ -4223,7 +4381,7 @@ index d2ce453..c74c042 100644
              CONFIG_BOOL(
                    list, list_info,
                    &settings->bools.menu_show_reboot,
-@@ -13316,7 +13399,7 @@ static bool setting_append_list(
+@@ -13316,7 +13403,7 @@ static bool setting_append_list(
                    general_write_handler,
                    general_read_handler,
                    SD_FLAG_NONE);
@@ -4232,7 +4390,7 @@ index d2ce453..c74c042 100644
  
              CONFIG_STRING(
                 list, list_info,
-@@ -13330,7 +13413,7 @@ static bool setting_append_list(
+@@ -13330,7 +13417,7 @@ static bool setting_append_list(
                 parent_group,
                 general_write_handler,
                 general_read_handler);
@@ -4241,7 +4399,7 @@ index d2ce453..c74c042 100644
              (*list)[list_info->index - 1].ui_type       = ST_UI_TYPE_PASSWORD_LINE_EDIT;
           }
  #endif
-@@ -13445,7 +13528,7 @@ static bool setting_append_list(
+@@ -13445,7 +13532,7 @@ static bool setting_append_list(
                    general_write_handler,
                    general_read_handler,
                    SD_FLAG_NONE);
@@ -4250,7 +4408,7 @@ index d2ce453..c74c042 100644
  
              CONFIG_BOOL(
                    list, list_info,
-@@ -14281,7 +14364,7 @@ static bool setting_append_list(
+@@ -14281,7 +14368,7 @@ static bool setting_append_list(
                 general_write_handler,
                 general_read_handler,
                 SD_FLAG_NONE);
@@ -4259,7 +4417,7 @@ index d2ce453..c74c042 100644
  
  #if !defined(RARCH_MOBILE)
           CONFIG_BOOL(
-@@ -14299,7 +14382,7 @@ static bool setting_append_list(
+@@ -14299,7 +14386,7 @@ static bool setting_append_list(
                 general_read_handler,
                 SD_FLAG_CMD_APPLY_AUTO);
           menu_settings_list_current_add_cmd(list, list_info, CMD_EVENT_REINIT);
@@ -4268,7 +4426,7 @@ index d2ce453..c74c042 100644
  #endif
  
  #if defined(_3DS)
-@@ -14364,7 +14447,7 @@ static bool setting_append_list(
+@@ -14364,7 +14451,7 @@ static bool setting_append_list(
                 general_read_handler,
                 SD_FLAG_NONE);
  
@@ -4277,7 +4435,7 @@ index d2ce453..c74c042 100644
           CONFIG_BOOL(
                 list, list_info,
                 &settings->bools.menu_show_core_updater,
-@@ -15976,7 +16059,7 @@ static bool setting_append_list(
+@@ -15976,7 +16063,7 @@ static bool setting_append_list(
           END_SUB_GROUP(list, list_info, parent_group);
           END_GROUP(list, list_info, parent_group);
           break;
@@ -4286,7 +4444,7 @@ index d2ce453..c74c042 100644
           {
  #if defined(HAVE_LAKKA)
              START_GROUP(list, list_info, &group_info,
-@@ -16056,6 +16139,84 @@ static bool setting_append_list(
+@@ -16056,6 +16143,84 @@ static bool setting_append_list(
              END_SUB_GROUP(list, list_info, parent_group);
              END_GROUP(list, list_info, parent_group);
  #endif
@@ -4371,7 +4529,7 @@ index d2ce453..c74c042 100644
           }
           break;
        case SETTINGS_LIST_USER:
-@@ -16074,7 +16235,7 @@ static bool setting_append_list(
+@@ -16074,7 +16239,7 @@ static bool setting_append_list(
                 &group_info,
                 &subgroup_info,
                 parent_group);
@@ -4380,7 +4538,7 @@ index d2ce453..c74c042 100644
  
           CONFIG_STRING(
                 list, list_info,
-@@ -17054,7 +17215,7 @@ static rarch_setting_t *menu_setting_new_internal(rarch_setting_info_t *list_inf
+@@ -17054,7 +17219,7 @@ static rarch_setting_t *menu_setting_new_internal(rarch_setting_info_t *list_inf
        SETTINGS_LIST_CHEEVOS,
        SETTINGS_LIST_CORE_UPDATER,
        SETTINGS_LIST_NETPLAY,
@@ -4390,7 +4548,7 @@ index d2ce453..c74c042 100644
        SETTINGS_LIST_USER_ACCOUNTS,
        SETTINGS_LIST_USER_ACCOUNTS_CHEEVOS,
 diff --git a/msg_hash.h b/msg_hash.h
-index 25b6331..b2a917f 100644
+index 25b6331..50a66df 100644
 --- a/msg_hash.h
 +++ b/msg_hash.h
 @@ -66,7 +66,7 @@ enum msg_file_type
@@ -4419,7 +4577,15 @@ index 25b6331..b2a917f 100644
     MENU_LABEL(MENU_XMB_ANIMATION_HORIZONTAL_HIGHLIGHT),
     MENU_LABEL(MENU_XMB_ANIMATION_MOVE_UP_DOWN),
     MENU_LABEL(MENU_XMB_ANIMATION_OPENING_MAIN_MENU),
-@@ -1281,7 +1280,7 @@ enum msg_hash_enums
+@@ -564,6 +563,7 @@ enum msg_hash_enums
+    MENU_ENUM_LABEL_VALUE_OZONE_COLOR_THEME_BASIC_WHITE,
+    MENU_ENUM_LABEL_VALUE_OZONE_COLOR_THEME_BASIC_BLACK,
+ 
++   MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_TOORONTO,
+    MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_MONOCHROME,
+    MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_MONOCHROME_INVERTED,
+    MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_FLATUI,
+@@ -1281,7 +1281,7 @@ enum msg_hash_enums
     MENU_ENUM_LABEL_DEFERRED_CORE_CONTENT_LIST,
     MENU_ENUM_LABEL_DEFERRED_CORE_CONTENT_DIRS_LIST,
     MENU_ENUM_LABEL_DEFERRED_CORE_CONTENT_DIRS_SUBDIR_LIST,
@@ -4428,7 +4594,7 @@ index 25b6331..b2a917f 100644
     MENU_ENUM_LABEL_DEFERRED_INPUT_HOTKEY_BINDS_LIST,
     MENU_ENUM_LABEL_DEFERRED_DATABASE_MANAGER_LIST,
     MENU_ENUM_LABEL_DEFERRED_VIDEO_FILTER,
-@@ -1356,7 +1355,7 @@ enum msg_hash_enums
+@@ -1356,7 +1356,7 @@ enum msg_hash_enums
     MENU_ENUM_LABEL_DEFERRED_NETWORK_HOSTING_SETTINGS_LIST,
     MENU_ENUM_LABEL_DEFERRED_NETWORK_SETTINGS_LIST,
     MENU_ENUM_LABEL_DEFERRED_NETPLAY_LAN_SCAN_SETTINGS_LIST,
@@ -4437,7 +4603,7 @@ index 25b6331..b2a917f 100644
     MENU_ENUM_LABEL_DEFERRED_USER_SETTINGS_LIST,
     MENU_ENUM_LABEL_DEFERRED_DIRECTORY_SETTINGS_LIST,
     MENU_ENUM_LABEL_DEFERRED_PRIVACY_SETTINGS_LIST,
-@@ -1409,7 +1408,7 @@ enum msg_hash_enums
+@@ -1409,7 +1409,7 @@ enum msg_hash_enums
     /* Online Updater */
  
     MENU_LABEL(UPDATE_ASSETS),
@@ -4446,7 +4612,7 @@ index 25b6331..b2a917f 100644
     MENU_LABEL(UPDATE_CHEATS),
     MENU_LABEL(UPDATE_AUTOCONFIG_PROFILES),
     MENU_LABEL(UPDATE_DATABASES),
-@@ -1604,7 +1603,7 @@ enum msg_hash_enums
+@@ -1604,7 +1604,7 @@ enum msg_hash_enums
     MENU_ENUM_LABEL_OVERLAY_NEXT,
  
     MENU_LABEL(NETPLAY_ENABLE),
@@ -4455,7 +4621,7 @@ index 25b6331..b2a917f 100644
     MENU_LABEL(SSH_ENABLE),
     MENU_LABEL(SAMBA_ENABLE),
     MENU_LABEL(BLUETOOTH_ENABLE),
-@@ -2033,7 +2032,7 @@ enum msg_hash_enums
+@@ -2033,7 +2033,7 @@ enum msg_hash_enums
     MSG_PLAYLIST_MANAGER_PLAYLIST_CLEANED,
  
     MENU_LABEL(CORE_UPDATER_SETTINGS),
@@ -4464,7 +4630,7 @@ index 25b6331..b2a917f 100644
     MENU_LABEL(SHADER_APPLY_CHANGES),
     MENU_LABEL(SHADER_WATCH_FOR_CHANGES),
     MENU_LABEL(SAVE_NEW_CONFIG),
-@@ -2124,7 +2123,7 @@ enum msg_hash_enums
+@@ -2124,7 +2124,7 @@ enum msg_hash_enums
  
     /* System information */
  
@@ -4473,7 +4639,7 @@ index 25b6331..b2a917f 100644
     MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_DYNAMIC_SUPPORT,
     MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_BUILD_DATE,
     MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_GIT_VERSION,
-@@ -2370,8 +2369,8 @@ enum msg_hash_enums
+@@ -2370,8 +2370,8 @@ enum msg_hash_enums
     MENU_ENUM_LABEL_CB_CORE_UPDATER_DOWNLOAD,
     MENU_ENUM_LABEL_CB_CORE_UPDATER_LIST,
     MENU_ENUM_LABEL_CB_DOWNLOAD_URL,
@@ -4484,7 +4650,7 @@ index 25b6331..b2a917f 100644
     MENU_ENUM_LABEL_CB_MENU_THUMBNAIL,
     MENU_ENUM_LABEL_CB_MENU_LEFT_THUMBNAIL,
     MENU_ENUM_LABEL_CB_MENU_SAVESTATE_THUMBNAIL,
-@@ -2399,10 +2398,9 @@ enum msg_hash_enums
+@@ -2399,10 +2399,9 @@ enum msg_hash_enums
     MENU_ENUM_SUBLABEL_MIXER_ACTION_REMOVE,
     MENU_ENUM_SUBLABEL_MIXER_ACTION_VOLUME,
     MENU_ENUM_SUBLABEL_INFORMATION_LIST_LIST,
@@ -4496,7 +4662,7 @@ index 25b6331..b2a917f 100644
     MENU_LABEL(MENU_WIDGETS_ENABLE),
     MENU_LABEL(SELECT_FILE),
     MENU_LABEL(SELECT_FROM_PLAYLIST),
-@@ -2804,7 +2802,7 @@ enum msg_hash_enums
+@@ -2804,7 +2803,7 @@ enum msg_hash_enums
  #define MENU_LABEL_DEFERRED_ARCHIVE_OPEN_DETECT_CORE                           0xd9452498U
  #define MENU_LABEL_DEFERRED_ARCHIVE_OPEN                                       0xfa0938b8U
  #define MENU_LABEL_DEFERRED_CORE_CONTENT_LIST                                  0x76150c63U
@@ -4505,7 +4671,7 @@ index 25b6331..b2a917f 100644
  #define MENU_LABEL_DEFERRED_INPUT_HOTKEY_BINDS_LIST                            0x10b41d97U
  #define MENU_LABEL_DEFERRED_CONFIGURATIONS_LIST                                0x679a1b0bU
  #define MENU_LABEL_DEFERRED_BROWSE_URL_START                                   0xcef58296U
-@@ -2824,7 +2822,7 @@ enum msg_hash_enums
+@@ -2824,7 +2823,7 @@ enum msg_hash_enums
  
  /* Online updater settings */
  

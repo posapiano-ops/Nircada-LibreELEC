@@ -2,7 +2,7 @@
 
 source /etc/os-release
 
-MIRROR=http://builds.bandanet.org
+MIRROR=http://mirrornir.bandanet.org
 
 FILE=`wget $MIRROR/${LIBREELEC_ARCH}/.index -q -O - | head -1`
 URL=$MIRROR/${LIBREELEC_ARCH}/$FILE
