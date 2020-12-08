@@ -19,9 +19,9 @@
 ################################################################################
 
 PKG_NAME="vitaquake3"
-PKG_VERSION="bee3d54"
+PKG_VERSION="8e51b26"
 PKG_REV="1"
-PKG_ARCH="i386 x86_64"
+PKG_ARCH="x86_64"
 PKG_LICENSE="GPLv2"
 PKG_SITE="https://github.com/libretro/vitaquake3"
 PKG_GIT_URL="$PKG_SITE"
