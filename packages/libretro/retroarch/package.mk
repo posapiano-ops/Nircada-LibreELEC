@@ -193,7 +193,7 @@ makeinstall_target() {
   echo "menu_show_advanced_settings = \"false\"" >> $INSTALL/etc/retroarch.cfg
   echo "menu_scale_factor = \"0.860000\"" >> $INSTALL/etc/retroarch.cfg
   echo "menu_wallpaper_opacity = \"0.800000\"" >> $INSTALL/etc/retroarch.cfg
-  echo "menu_shader.pipeline = \"0\"" >> $INSTALL/etc/retroarch.cfg
+  echo "menu_shader_pipeline = \"0\"" >> $INSTALL/etc/retroarch.cfg
   echo "content_show_images = \"false\"" >> $INSTALL/etc/retroarch.cfg
   echo "content_show_music = \"false\"" >> $INSTALL/etc/retroarch.cfg
   echo "content_show_video = \"false\"" >> $INSTALL/etc/retroarch.cfg
