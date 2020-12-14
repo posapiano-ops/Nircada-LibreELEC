@@ -6,7 +6,7 @@ PKG_NAME="linux"
 PKG_LICENSE="GPL"
 PKG_SITE="http://www.kernel.org"
 PKG_DEPENDS_HOST="ccache:host openssl:host"
-PKG_DEPENDS_TARGET="toolchain linux:host cpio:host kmod:host xz:host wireless-regdb keyutils $KERNEL_EXTRA_DEPENDS_TARGET"
+PKG_DEPENDS_TARGET="toolchain linux:host kmod:host xz:host wireless-regdb keyutils $KERNEL_EXTRA_DEPENDS_TARGET"
 PKG_DEPENDS_INIT="toolchain"
 PKG_NEED_UNPACK="$LINUX_DEPENDS $(get_pkg_directory busybox)"
 PKG_LONGDESC="This package contains a precompiled kernel image and the modules."
@@ -44,9 +44,9 @@ case "$LINUX" in
     PKG_VERSION="5e12d570f207e48f321029b15026ae7c4ab21217"
     PKG_URL="https://github.com/hardkernel/linux/archive/$PKG_VERSION.tar.gz"
     ;;
-    mainline-5.4)
-    PKG_VERSION="5.4.72"
-    PKG_SHA256="0e24645bd56fe5b55a7a662895f5562c103d71b54d097281f0c9c71ff22c1172"
+    mainline-5.9)
+    PKG_VERSION="5.9.14"
+    PKG_SHA256="39fcfb41dcdf71b6b42b88eff3d8cedbe7523830ccae847f3914c0b97e1e6b49"
     PKG_URL="https://www.kernel.org/pub/linux/kernel/v5.x/$PKG_NAME-$PKG_VERSION.tar.xz"
     PKG_PATCH_DIRS="default"
     ;;
@@ -84,7 +84,7 @@ fi
 post_patch() {
   cp $PKG_KERNEL_CFG_FILE $PKG_BUILD/.config
 
-  sed -i -e "s|^CONFIG_INITRAMFS_SOURCE=.*$|CONFIG_INITRAMFS_SOURCE=\"$BUILD/image/initramfs.cpio\"|" $PKG_BUILD/.config
+  sed -i -e "s|^CONFIG_INITRAMFS_SOURCE=.*$|CONFIG_INITRAMFS_SOURCE=\"$(kernel_initramfs_confs) $BUILD/initramfs\"|" $PKG_BUILD/.config
   sed -i -e "/CONFIG_INITRAMFS_ROOT_UID/d" -e "/CONFIG_INITRAMFS_ROOT_GID/d" -e "/CONFIG_INITRAMFS_SOURCE=.../a CONFIG_INITRAMFS_ROOT_UID=0\nCONFIG_INITRAMFS_ROOT_GID=0" $PKG_BUILD/.config
 
   # set default hostname based on $DISTRONAME
