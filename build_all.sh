@@ -4,19 +4,19 @@ rm -rf target/
 export IGNORE_VERSION=1
 
 >&2 echo "Generic.x86_64"
-PROJECT=Generic ARCH=x86_64 make image > logs/x86_64.log
->&2 echo "Generic_VK_nvidia.x86_64"
-PROJECT=Generic_VK_nvidia ARCH=x86_64 make image > logs/VK_nvidia_x86_64.log
+PROJECT=Generic ARCH=x86_64 make image >&logs/x86_64.log
+#>&2 echo "Generic_VK_nvidia.x86_64"
+#PROJECT=Generic_VK_nvidia ARCH=x86_64 make image > logs/VK_nvidia_x86_64.log
 >&2 echo "Generic.i386"
-PROJECT=Generic ARCH=i386 make image > logs/i386.log
+PROJECT=Generic ARCH=i386 make image >&logs/i386.log
 >&2 echo "RPi.arm + noobs"
-PROJECT=RPi ARCH=arm make noobs > logs/Rpi.log
+PROJECT=RPi ARCH=arm make noobs >&logs/Rpi.log
 #>&2 echo "RPi.gpicase.arm + noobs"
 #PROJECT=RPi BOARD=GPICase ARCH=arm make noobs
 >&2 echo "RPi2.arm + noobs"
-PROJECT=RPi2 ARCH=arm make noobs > logs/Rpi2.log
+PROJECT=RPi2 ARCH=arm make noobs >&logs/Rpi2.log
 >&2 echo "RPi4.arm + noobs"
-PROJECT=RPi2 BOARD=RPi4 ARCH=arm make noobs > logs/Rpi4.log
+PROJECT=RPi2 BOARD=RPi4 ARCH=arm make noobs >&logs/Rpi4.log
 #>&2 echo "Allwinner.arm"
 #PROJECT=Allwinner SYSTEM=Bananapi ARCH=arm make image
 #PROJECT=Allwinner SYSTEM=Cubieboard2 ARCH=arm make image

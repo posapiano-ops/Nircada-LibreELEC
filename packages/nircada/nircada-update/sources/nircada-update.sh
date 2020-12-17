@@ -2,10 +2,10 @@
 
 source /etc/os-release
 
-MIRROR=http://mirrornir.bandanet.org
+MIRROR=http://sources.bandanet.org/NircadaOS
 
-FILE=`wget $MIRROR/${LIBREELEC_ARCH}/.index -q -O - | head -1`
-URL=$MIRROR/${LIBREELEC_ARCH}/$FILE
+FILE=`wget $MIRROR/${CODENAME}/${LIBREELEC_ARCH}/.index -q -O - | head -1`
+URL=$MIRROR/${CODENAME}/${LIBREELEC_ARCH}/$FILE
 
 rm -rf ~/.update/*
 

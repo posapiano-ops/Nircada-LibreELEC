@@ -23,6 +23,9 @@
 
 FROM ubuntu:bionic
 
+ENV TZ=Europe/Rome 
+ARG DEBIAN_FRONTEND=noninteractive
+
 RUN apt-get update \
 	&& apt-get upgrade -y \
 	&& apt-get install -y \
@@ -42,23 +45,33 @@ RUN apt-get update \
 		groff-base \
 		gzip \
 		libavcodec-dev \
+		libbz2-dev \
+		libc6-dev \
 		libjson-perl \
 		libffi-dev \
 		libfreetype6-dev \
 		libgbm-dev \
 		libgdbm-dev \
 		libegl1-mesa-dev \
+		libgdbm-dev \
 		libgles2-mesa-dev \
 		libgfortran-7-dev \
+		liblzma-dev \
 		libncurses5-dev \
+		libncursesw5-dev \
 		libnss3-dev \
         libmount-dev \
 		libreadline-dev \
+		libreadline6-dev \
+		# libreadline-gplv2-dev \
 		libxkbcommon-dev \
 		libsdl2-dev \
 		libsdl-image1.2-dev \
+		libsqlite3-dev \
 		libssl-dev \
 		libxml2-dev \
+		lzma \
+		lzma-dev \
 		lzop \
 		make \
 		mesa-common-dev \
@@ -72,6 +85,8 @@ RUN apt-get update \
 		sed \
         swig \
 		tar \
+		tk-dev \
+		tk8.5-dev \
 		texinfo \
 		u-boot-tools \		
 		unzip \

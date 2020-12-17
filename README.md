@@ -1,16 +1,16 @@
-# NircadaOS Tooroto edition - Retro Arcade Emulation console
+# NircadaOS 0.3.x (Tooroto edition) - Retro Arcade Emulation console
 
-Nircada is a lightweight Linux distribution that transforms a small computer into a full blown emulation console.
+NircadaOS is a lightweight Linux distribution that transforms a small computer into a full blown emulation console.
 
-* **Powerful** - Built on top of the famous RetroArch emulator, NircadaOS is able to emulate a large range of hardware and has some useful features such as Braid-like rewinding, joypad hotplug and video streaming.
-* **User friendly** - NircadaOS is easy to setup and use. Once installed to your SD card, you just have to put your rom on the card, plug your joypad and enjoy your favorite old games. We also support PS3 and XBox360 controllers so you don't have to buy new ones. 
-* **Low cost** - We try our best to keep the hardware required to run NircadaOS as cheap as possible. The software is optimized to run fast even on low end computers. The power can be supplied by any micro USB adapter like the one for your smartphone.
-* **Open source** - Our code is free as in freedom and hosted on Github (though the project uses emulators that forbid commercialisation). We accept external contributions, and we do our best to integrate our own patches into upstream projects.
+This project is a fork of https://github.com/libretro/Lakka-LibreELEC version 2.3.2
+includes:
+* LibreELEC 8.2.5
+* Linux 4.11
+* RetroArch 1.8.4
 
 ## Buinding instructions
 ```
-$ git clone --branch Tooronto https://github.com/posapiano-ops/Nircada-LibreELEC.git 0.x.x
-$ cd 0.x.x
+$ git clone --branch Tooronto https://github.com/posapiano-ops/Nircada-LibreELEC.git
 $ docker system prune -a
 $ docker build -t nircada .
 ```
@@ -22,7 +22,6 @@ $ docker run --rm -it -v $(pwd):/root nircada
  ```
 $ DISTRO=NircadaOS PROJECT=RPi2 ARCH=arm make image
 ```
-
 analog:
 ```
 #   DISTRO=NircadaOS PROJECT=Generic ARCH=x86_64 make image

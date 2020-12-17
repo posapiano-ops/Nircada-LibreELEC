@@ -46,7 +46,7 @@ index ff828e3..cced186 100644
  RetroArch is the reference frontend for the libretro API.
  Popular examples of implementations for this API includes video game system emulators and game engines as well as
 diff --git a/config.def.h b/config.def.h
-index 496d4f5..60418af 100644
+index 496d4f5..a79d0ba 100644
 --- a/config.def.h
 +++ b/config.def.h
 @@ -182,7 +182,7 @@
@@ -75,6 +75,15 @@ index 496d4f5..60418af 100644
  #define DEFAULT_XMB_SHADOWS_ENABLE false
  #else
  #define DEFAULT_XMB_SHADOWS_ENABLE true
+@@ -559,7 +564,7 @@ static float menu_header_opacity = 1.000;
+ 
+ #define DEFAULT_SHOW_ADVANCED_SETTINGS false
+ 
+-#define DEFAULT_RGUI_COLOR_THEME RGUI_THEME_CLASSIC_GREEN
++#define DEFAULT_RGUI_COLOR_THEME RGUI_THEME_CLASSIC_RED
+ 
+ static bool rgui_inline_thumbnails = false;
+ static bool rgui_swap_thumbnails = false;
 diff --git a/configuration.c b/configuration.c
 index c339e9e..4366a60 100644
 --- a/configuration.c
@@ -3204,7 +3213,7 @@ index 019fb4c..95dc5f5 100644
              menu_displaylist_setting(&entry);
  
 diff --git a/menu/drivers/ozone/ozone_texture.c b/menu/drivers/ozone/ozone_texture.c
-index 7bb6d28..8435150 100644
+index 7bb6d28..51608ac 100644
 --- a/menu/drivers/ozone/ozone_texture.c
 +++ b/menu/drivers/ozone/ozone_texture.c
 @@ -126,7 +126,7 @@ menu_texture_item ozone_entries_icon_get_texture(ozone_handle_t *ozone,
@@ -3238,8 +3247,29 @@ index 7bb6d28..8435150 100644
        case MENU_SET_SWITCH_BRIGHTNESS:
           return ozone->icons_textures[OZONE_ENTRIES_ICONS_TEXTURE_BRIGHTNESS];
  #endif
+@@ -518,6 +518,8 @@ switch (id)
+       case OZONE_ENTRIES_ICONS_TEXTURE_MAIN_MENU:
+ #if defined(HAVE_LAKKA)
+          return "lakka.png";
++#elif defined(HAVE_NIRCADA)
++         return "nircada.png";
+ #else
+          return "retroarch.png";
+ #endif
+@@ -684,7 +686,11 @@ switch (id)
+       case OZONE_ENTRIES_ICONS_TEXTURE_PLAYLIST:
+          return "menu_playlist.png";
+       case OZONE_ENTRIES_ICONS_TEXTURE_QUICKMENU:
++      #if defined(HAVE_NIRCADA)
++          return "menu_quickmenu_n.png";
++      #else
+          return "menu_quickmenu.png";
++      #endif
+       case OZONE_ENTRIES_ICONS_TEXTURE_REWIND:
+          return "menu_rewind.png";
+       case OZONE_ENTRIES_ICONS_TEXTURE_OVERLAY:
 diff --git a/menu/drivers/stripes.c b/menu/drivers/stripes.c
-index 2ca8eac..48e0aef 100644
+index 2ca8eac..dc9066d 100644
 --- a/menu/drivers/stripes.c
 +++ b/menu/drivers/stripes.c
 @@ -369,6 +369,8 @@ const char* stripes_theme_ident(void)
@@ -3251,8 +3281,17 @@ index 2ca8eac..48e0aef 100644
        case XMB_ICON_THEME_RETROACTIVE:
           return "retroactive";
        case XMB_ICON_THEME_RETROSYSTEM:
+@@ -3481,6 +3483,8 @@ static const char *stripes_texture_path(unsigned id)
+       case STRIPES_TEXTURE_MAIN_MENU:
+ #if defined(HAVE_LAKKA)
+          return "lakka.png";
++#elif defined(HAVE_NIRCADA)
++         return "nircada.png";
+ #else
+          return "retroarch.png";
+ #endif
 diff --git a/menu/drivers/xmb.c b/menu/drivers/xmb.c
-index 15da4b7..651250c 100644
+index 15da4b7..73e1293 100644
 --- a/menu/drivers/xmb.c
 +++ b/menu/drivers/xmb.c
 @@ -481,6 +481,8 @@ const char* xmb_theme_ident(void)
@@ -3295,7 +3334,28 @@ index 15da4b7..651250c 100644
        case MENU_SET_SWITCH_BRIGHTNESS:
           return xmb->textures.list[XMB_TEXTURE_BRIGHTNESS];
  #endif
-@@ -6253,12 +6255,12 @@ static int xmb_list_push(void *data, void *userdata,
+@@ -5220,6 +5222,8 @@ static const char *xmb_texture_path(unsigned id)
+       case XMB_TEXTURE_MAIN_MENU:
+ #if defined(HAVE_LAKKA)
+          return "lakka.png";
++#elif defined(HAVE_NIRCADA)
++         return "nircada.png";
+ #else
+          return "retroarch.png";
+ #endif
+@@ -5386,7 +5390,11 @@ static const char *xmb_texture_path(unsigned id)
+       case XMB_TEXTURE_DISC:
+          return "disc.png";
+       case XMB_TEXTURE_QUICKMENU:
++      #if defined(HAVE_NIRCADA)
++          return "menu_quickmenu_n.png";
++      #else
+          return "menu_quickmenu.png";
++      #endif
+       case XMB_TEXTURE_REWIND:
+          return "menu_rewind.png";
+       case XMB_TEXTURE_OVERLAY:
+@@ -6253,12 +6261,12 @@ static int xmb_list_push(void *data, void *userdata,
                 menu_displaylist_setting(&entry);
              }
  

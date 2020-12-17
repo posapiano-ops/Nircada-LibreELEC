@@ -1,7 +1,8 @@
 # Name of the Distro to build (full name, without special characters)
   DISTRONAME="NircadaOS"
   LIBREELEC_VERSION="devel"
-  OS_VERSION="0.3.10"
+  OS_VERSION="0.3.11"
+  CODENAME="Tooronto"
   
   DISTRO_WEBSITE="https://nircada.weebly.com/"
   
