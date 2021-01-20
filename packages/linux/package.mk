@@ -28,12 +28,6 @@ case "$LINUX" in
     PKG_SOURCE_NAME="linux-$LINUX-$PKG_VERSION.tar.gz"
     ;;
   raspberrypi)
-    PKG_VERSION="cc39f1c9f82f6fe5a437836811d906c709e0661c" # 4.19.127
-    PKG_SHA256="3a66daa41e7ed240f853542a63b542d4d7eff65c4fac2825b135bf5711ffa913"
-    PKG_URL="https://github.com/raspberrypi/linux/archive/$PKG_VERSION.tar.gz"
-    PKG_SOURCE_NAME="linux-$LINUX-$PKG_VERSION.tar.gz"
-    ;;
-  rpi-5.4)
     PKG_VERSION="edc21a35b9b7b427716564c3b744ed2a89fcd19a" # 5.4.71
     PKG_SHA256="bce0429841ef280d5ae991a261954f90ad6de35a091b59714f1535c8d1f3334e"
     PKG_URL="https://github.com/raspberrypi/linux/archive/$PKG_VERSION.tar.gz"
@@ -163,11 +157,11 @@ pre_make_target() {
   if [ "$TARGET_ARCH" = "x86_64" -o "$TARGET_ARCH" = "i386" ]; then
     # copy some extra firmware to linux tree
     mkdir -p $PKG_BUILD/external-firmware
-      cp -a $(get_build_dir kernel-firmware)/{amdgpu,amd-ucode,i915,nvidia,radeon,e100,rtl_nic} $PKG_BUILD/external-firmware
+      cp -a $(get_build_dir kernel-firmware)/.copied-firmware/{amdgpu,amd-ucode,i915,nvidia,radeon,e100,rtl_nic} $PKG_BUILD/external-firmware
       cp -a $(get_build_dir intel-ucode)/intel-ucode $PKG_BUILD/external-firmware
   elif [ "$TARGET_ARCH" = "arm" -a "$DEVICE" = "iMX6" ]; then
       mkdir -p $PKG_BUILD/external-firmware
-        cp -a $(get_build_dir kernel-firmware)/imx $PKG_BUILD/external-firmware
+        cp -a $(get_build_dir kernel-firmware)/.copied-firmware/imx $PKG_BUILD/external-firmware
   fi
 
   if [ -d $PKG_BUILD/external-firmware/ ]; then
