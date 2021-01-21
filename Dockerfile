@@ -29,6 +29,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
 	&& apt-get upgrade -y \
 	&& apt-get install -y \
+		apt-utils \
 		bash \
 		bc \
         bison \
@@ -82,6 +83,7 @@ RUN apt-get update \
 		perl \
 		python3 \
         python3-dev \
+		pkg-config \
 		sed \
         swig \
 		tar \
