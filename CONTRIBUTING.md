@@ -1,22 +1,22 @@
 # General rules
 
- * Lakka focuses on stability rather than bleeding edge
+ * NircadaOS focuses on stability rather than bleeding edge
  * We try to maintain all the supported platforms, but we know that 95% of our users are using PC and RPi
  * You are responsible for your own changes, if you break something, you need to fix it
  * Everybody has to test their own changes
  * Testing means manual testing on real hardware
- * If you are unsure how to contribute code, meet us on IRC (#lakkatv on freenode) or Discord (libretro server)
+ * If you are unsure how to contribute code, meet us on Discord (Nircada server)
  * Our users want the latest working versions of RetroArch and the libretro cores. They don't want non working / half working versions.
 
 # Team members
 
-Project leader: natinusala
+Project leader: posapiano-ops
 
-Team members: kivutar, Ntemis, gouchi, ToKe79, RobLoach, natinusala, plaidman
+Team members: gibranx
 
 # The development branch
 
-The development happens on the branch master. This branch follows LibreELEC 8.2 stable.
+The development happens on the branch Tooronto. This branch follows Lakka stable 2.3.2.
 
 We consider this branch as a rolling release, and we ensure that:
 
