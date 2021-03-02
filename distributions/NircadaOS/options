@@ -1,7 +1,7 @@
 # Name of the Distro to build (full name, without special characters)
   DISTRONAME="NircadaOS"
   LIBREELEC_VERSION="devel"
-  OS_VERSION="0.3.11"
+  OS_VERSION="0.3.12"
   CODENAME="Tooronto"
   
   DISTRO_WEBSITE="https://nircada.weebly.com/"
@@ -10,7 +10,7 @@
   DISTRO_PINN_GROUP="Games"
 
 # short project description
-  DESCRIPTION="The DIY retro emulation console"
+  DESCRIPTION="Retro Arcade Emulation console"
 
 # Welcome Message for e.g. SSH Server (up to 5 Lines)
   GREETING0=""
