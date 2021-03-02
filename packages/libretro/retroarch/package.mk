@@ -19,7 +19,7 @@
 ################################################################################
 
 PKG_NAME="retroarch"
-PKG_VERSION="b4bfdcf"
+PKG_VERSION="26b7794"
 PKG_REV="11"
 PKG_ARCH="any"
 PKG_LICENSE="GPLv3"
@@ -179,7 +179,7 @@ makeinstall_target() {
   
   # Input
   sed -i -e "s/# input_driver = sdl/input_driver = udev/" $INSTALL/etc/retroarch.cfg
-  sed -i -e "s/# input_max_users = 16/input_max_users = 5/" $INSTALL/etc/retroarch.cfg
+  sed -i -e "s/# input_max_users = 16/input_max_users = 6/" $INSTALL/etc/retroarch.cfg
   sed -i -e "s/# input_autodetect_enable = true/input_autodetect_enable = true/" $INSTALL/etc/retroarch.cfg
   sed -i -e "s/# joypad_autoconfig_dir =/joypad_autoconfig_dir = \/tmp\/joypads/" $INSTALL/etc/retroarch.cfg
   sed -i -e "s/# input_remapping_directory =/input_remapping_directory = \/storage\/remappings/" $INSTALL/etc/retroarch.cfg
