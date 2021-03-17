@@ -82,10 +82,10 @@ fi
 if [[ "$TARGET_FPU" =~ "neon" ]]; then
   RETROARCH_NEON="--enable-neon"
 fi
-
-if [ "$NIRCADA_NIGHTLY" = yes ]; then
-  CFLAGS="$CFLAGS -DHAVE_NIRCADA_NIGHTLY"
-fi
+# Disable Nightly for Nircada
+#if [ "$NIRCADA_NIGHTLY" = yes ]; then
+#  CFLAGS="$CFLAGS -DHAVE_NIRCADA_NIGHTLY"
+#fi
 
 TARGET_CONFIGURE_OPTS=""
 PKG_CONFIGURE_OPTS_TARGET="--disable-vg \
